@@ -171,6 +171,12 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.sweek{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:110px;margin-top:4px}
+.sbar{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.scol{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
+.sfill{width:100%;max-width:28px;min-height:3px;background:var(--line);border-radius:6px 6px 2px 2px;transition:height .6s}
+.sfill.ok{background:var(--accent)}
+.sbar span{font-size:.72rem;color:var(--muted)} .sbar span.today{color:var(--ink);font-weight:700}
 .blesson .lnum{border-color:var(--rest);color:var(--rest)}
 .blesson .lnum.done{background:var(--rest);color:#141414}
 textarea.inp{resize:vertical;min-height:110px;line-height:1.45}
@@ -280,7 +286,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 
   <!-- CORP -->
   <section class="view" id="v-corp" hidden>
-    <div><h1>Mișcare</h1><p class="date">Doar greutatea corpului, fără echipament.</p></div>
+    <div><h1>Mișcare</h1><p class="date">Acasă sau afară, fără echipament.</p></div>
     <div class="seg" id="corpSeg"></div>
 
     <div id="corpDaily" style="display:flex;flex-direction:column;gap:22px">
@@ -305,6 +311,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
       <button class="btn" id="startMil">Începe sesiunea</button>
       <p class="foot">Nu reușești flotările clasice? Fă-le pe genunchi sau cu mâinile pe pat ori apasă „Mai ușor”. Termină repetările în ritmul tău și apasă Gata.</p>
     </div>
+    <div id="corpRun" style="display:flex;flex-direction:column;gap:22px" hidden></div>
   </section>
 
   <!-- POST -->
@@ -683,7 +690,7 @@ function renderAzi(){
   const bi=bNext(),bd=PLANS[bible.plan].days;
   const mn=milNext();
   const cards=[
-   {t:"c",tag:"Mișcare",title:corpMode==="mil"&&mn?`Program militar · săpt. ${mn[0]} · ${MIL[mn[1]].k}`:`Rutina zilnică · ${LEVELS[level].name}`,done:has(TODAY,"c"),go:"corp"},
+   {t:"c",tag:"Mișcare",title:corpMode==="run"?runTitle():corpMode==="mil"&&mn?`Program militar · săpt. ${mn[0]} · ${MIL[mn[1]].k}`:`Rutina zilnică · ${LEVELS[level].name}`,done:has(TODAY,"c"),go:"corp"},
    {t:"b",tag:"Biblie",title:bi<0?"Plan terminat. Alege altul.":`Ziua ${bi+1}: ${bd[bi]}`,done:has(TODAY,"b"),go:"biblie"},
    {t:"r",tag:"Rugăciune",title:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
    {t:"p",tag:"Post",title:fast.active?`În desfășurare: ${FASTS.find(f=>f.id===fast.active.id).n}`:"Opțional. Alege când ești pregătit.",done:false,go:"post"}
@@ -697,9 +704,11 @@ function renderAzi(){
 }
 
 function renderCorp(){
-  $("corpSeg").innerHTML=[["daily","Rutina zilnică"],["mil","Program militar"]].map(([k,l])=>`<button class="lvl" data-m="${k}" aria-pressed="${corpMode===k}"><b>${l}</b><span>${k==="daily"?"5–12 min":"8 săptămâni"}</span></button>`).join("");
+  $("corpSeg").style.gridTemplateColumns="repeat(3,1fr)";
+  $("corpSeg").innerHTML=[["daily","Rutina zilnică","5–12 min"],["mil","Program militar","8 săptămâni"],["run","Alergare și pași","pași zilnici"]].map(([k,l,sub])=>`<button class="lvl" data-m="${k}" aria-pressed="${corpMode===k}"><b style="font-size:.9rem">${l}</b><span>${sub}</span></button>`).join("");
   $("corpSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{corpMode=b.dataset.m;store.set("md_corpmode",corpMode);renderCorp()});
-  $("corpDaily").hidden=corpMode!=="daily";$("corpMil").hidden=corpMode!=="mil";
+  $("corpDaily").hidden=corpMode!=="daily";$("corpMil").hidden=corpMode!=="mil";$("corpRun").hidden=corpMode!=="run";
+  if(corpMode==="run"){renderRun();return}
   if(corpMode==="daily"){
     const lv=$("levels");lv.innerHTML="";
     for(const [k,L] of Object.entries(LEVELS)){const tot=L.count*L.work+(L.count-1)*L.rest;
@@ -842,6 +851,64 @@ function renderRug(){
 
 
 
+
+/* ---------- running & steps ---------- */
+const RUNW=[[8,60,90],[6,90,120],[5,120,90],[4,180,90],[3,300,120],[2,600,120],[1,1200,0],[1,1500,0]]; // repetări, secunde de alergare, secunde de mers
+let run=store.get("md_run",{done:{}}),steps=store.get("md_steps",{}),stepGoal=store.get("md_stepgoal",7500);
+function runNext(){for(let w=1;w<=8;w++)for(let s=0;s<3;s++)if(!run.done[w+"-"+s])return[w,s];return null}
+let runSel=runNext()||[8,2];
+const runTitle=()=>{const n=runNext();return n?`Alergare · săpt. ${n[0]} · sesiunea ${n[1]+1}`:"Alergare · program terminat"};
+const fmtM=x=>x%60?(x>=60?`${Math.floor(x/60)} min ${x%60} s`:`${x} s`):`${x/60} min`;
+function runParts(w,s){let [n,r,k]=RUNW[w-1];if(w===8)r=[1500,1680,1800][s];return{n,r,k,total:Math.round((600+n*r+(n-1)*k)/60)}}
+function speak(t){try{if(!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang="ro-RO";const v=speechSynthesis.getVoices().find(v=>/^ro/i.test(v.lang));if(v)u.voice=v;speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){}}
+function renderRun(){
+  const t=steps[TODAY]||0,pct=Math.min(100,t/stepGoal*100);
+  const days=[];for(let i=6;i>=0;i--){const d=new Date(today);d.setDate(d.getDate()-i);days.push(ymd(d))}
+  const mx=Math.max(stepGoal,...days.map(d=>steps[d]||0));
+  const bars=days.map(d=>{const v=steps[d]||0;return`<div class="sbar" title="${v.toLocaleString("ro-RO")} pași"><div class="scol"><div class="sfill ${v>=stepGoal?"ok":""}" style="height:${(v/mx*100).toFixed(1)}%"></div></div><span class="${d===TODAY?"today":""}">${["D","L","M","M","J","V","S"][new Date(d+"T12:00:00").getDay()]}</span></div>`}).join("");
+  const [w,s]=runSel,P=runParts(w,s),done=!!run.done[w+"-"+s];
+  let g='<span></span>'+[1,2,3].map(n=>`<span class="h">${n}</span>`).join("");
+  for(let x=1;x<=8;x++){g+=`<span class="h" style="text-align:left">Săpt. ${x}</span>`;
+    for(let y=0;y<3;y++){const k=x+"-"+y,sel=w===x&&s===y;g+=`<button class="cell ${run.done[k]?"done":""} ${sel?"sel":""}" data-rw="${x}" data-rs="${y}" aria-label="Săptămâna ${x}, sesiunea ${y+1}">${run.done[k]?"✓":y+1}</button>`}}
+  $("corpRun").innerHTML=`
+  <section><h2>Pașii de azi</h2><div class="card">
+    <div class="row"><div><div class="big">${t.toLocaleString("ro-RO")}</div><span class="muted">din ${stepGoal.toLocaleString("ro-RO")} pași</span></div>${t>=stepGoal?'<span class="ok">✓ Obiectiv atins</span>':""}</div>
+    <div class="bar2"><i style="width:${pct.toFixed(1)}%;background:var(--accent)"></i></div>
+    <div class="sweek">${bars}</div>
+    <div class="two"><input class="inp" id="stIn" type="number" inputmode="numeric" min="0" max="100000" placeholder="Pașii de azi" aria-label="Pașii de azi"><button class="btn small" id="stSave">Salvează</button></div>
+    <div class="field"><span class="flabel">Obiectiv zilnic</span><div class="chipset">${[5000,7500,10000,12000].map(x=>`<button class="chip" data-goal="${x}" aria-pressed="${stepGoal===x}">${x.toLocaleString("ro-RO")}</button>`).join("")}</div></div>
+    <p class="muted">Telefonul îți numără deja pașii: îi găsești în aplicația de sănătate (Google Fit, Samsung Health sau Sănătate pe iPhone). Notează-i aici seara.</p>
+  </div></section>
+  <div class="card"><p><b>Alergare de la zero, în 8 săptămâni.</b> Trei ieșiri pe săptămână, alternând alergarea ușoară cu mersul. La final alergi 30 de minute fără oprire.</p>
+    <p class="muted">Aplicația îți spune cu voce și cu semnale sonore când să alergi și când să mergi. Ține ecranul pornit ca să le auzi.</p></div>
+  <section><h2>Progres</h2><div class="grid8">${g}</div></section>
+  <section><h2>Săptămâna ${w} · sesiunea ${s+1}</h2>
+    <div class="plan"><ol>
+      <li><span class="i">01</span><span class="n">Încălzire<span class="z">mers alert</span></span><span class="t">5 min</span></li>
+      <li><span class="i">02</span><span class="n">${P.n>1?`Aleargă ${fmtM(P.r)}, apoi mergi ${fmtM(P.k)}`:`Aleargă ${fmtM(P.r)} fără oprire`}<span class="z">${P.n>1?`de ${P.n} ori`:"ritm ușor, la care poți vorbi"}</span></span><span class="t">${Math.round((P.n*P.r+(P.n-1)*P.k)/60)} min</span></li>
+      <li><span class="i">03</span><span class="n">Revenire<span class="z">mers lejer și întinderi</span></span><span class="t">5 min</span></li>
+    </ol><div class="summary"><span>Total</span><span>~${P.total} min</span></div></div>
+  </section>
+  <button class="btn" id="startRun">${done?"Repetă sesiunea":"Începe alergarea"}</button>
+  <p class="foot">Aleargă într-un ritm la care încă poți vorbi. Dacă o săptămână ți se pare prea grea, repet-o. Ai grijă la încălțăminte și oprește-te dacă simți durere.</p>`;
+  $("corpRun").querySelectorAll("[data-rw]").forEach(b=>b.onclick=()=>{runSel=[+b.dataset.rw,+b.dataset.rs];renderRun()});
+  $("corpRun").querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{stepGoal=+b.dataset.goal;store.set("md_stepgoal",stepGoal);renderRun()});
+  $("stSave").onclick=()=>{const v=parseInt($("stIn").value,10);if(!(v>=0)){$("stIn").focus();return}
+    const was=(steps[TODAY]||0)>=stepGoal,p0=points();steps[TODAY]=Math.min(v,100000);store.set("md_steps",steps);
+    if(steps[TODAY]>=stepGoal&&!was){mark("c");renderRun();celebrate("Obiectiv de pași atins",`${steps[TODAY].toLocaleString("ro-RO")} pași azi. Bravo!`,p0)}else renderRun()};
+  $("startRun").onclick=()=>{
+    try{speechSynthesis&&speechSynthesis.speak(new SpeechSynthesisUtterance(" "))}catch(e){}
+    const st=[{kind:"time",tone:"rest",phase:"Încălzire",title:"Mers alert",cue:"Mergi alert 5 minute ca să te încălzești.",dur:300,say:"Începem. Mers alert, cinci minute."}];
+    for(let i=0;i<P.n;i++){
+      st.push({kind:"time",tone:"work",phase:P.n>1?`Alergare · ${i+1} din ${P.n}`:"Alergare",title:"Aleargă",cue:"Ritm ușor, la care încă poți vorbi. Respiră relaxat.",dur:P.r,say:"Aleargă",next:i<P.n-1?`După: <b>mers ${fmtM(P.k)}</b>`:"Urmează revenirea"});
+      if(i<P.n-1)st.push({kind:"rest",tone:"rest",phase:"Pauză activă",title:"Mergi",cue:"Mers alert. Lasă respirația să se liniștească.",dur:P.k,say:"Mergi"});
+    }
+    st.push({kind:"time",tone:"rest",phase:"Revenire",title:"Mers lejer",cue:"Cinci minute de mers lejer, apoi întinde ușor gambele și coapsele.",dur:300,say:"Gata cu alergarea. Mers lejer, cinci minute."});
+    runStart(st,()=>{const p0=points();run.done[w+"-"+s]=TODAY;store.set("md_run",run);mark("c");runSel=runNext()||runSel;speak("Felicitări! Ai terminat.");
+      celebrate(`Alergare · săptămâna ${w} gata`,`Sesiunea ${s+1} din 3. Bea apă și odihnește-te.`,p0)});
+  };
+}
+
 /* ---------- Bible reading lessons ---------- */
 const BLESSONS=[
  {t:"Ce este Biblia",txt:["Biblia nu este o singură carte, ci o bibliotecă de 66 de cărți, scrise de-a lungul a aproximativ 1.500 de ani. Are două părți: Vechiul Testament (39 de cărți, înainte de venirea lui Isus) și Noul Testament (27 de cărți, despre viața lui Isus și începutul Bisericii).","Cărțile au stiluri diferite: istorie, legi, poezie și cântări (Psalmii), înțelepciune (Proverbe), profeții, evanghelii (viața lui Isus) și scrisori către biserici. Tocmai de aceea nu se citește ca un roman, de la prima pagină până la ultima. Toate spun însă aceeași poveste mare: Dumnezeu care dorește o relație cu omul."],ref:"Cuprinsul Bibliei tale",tr:"Deschide cuprinsul de la începutul Bibliei și uită-te la lista cărților. Găsește unde începe Noul Testament și unde este Evanghelia după Ioan."},
@@ -934,7 +1001,8 @@ function go(i){
   const pb=$("pause");pb.className="btn"+(tone==="pray"?" pray":"");
   if(s.kind==="reps"){$("secN").className="";$("secN").textContent=s.reps;$("secU").textContent=s.unit;$("arc").style.strokeDashoffset=0;pb.textContent="Gata ✓"}
   else{pb.textContent="Pauză";$("secU").textContent=tone==="pray"?"timp rămas":"";draw()}
-  if(tone==="pray"){if(i>0)bell()}else if(tone==="work"){beep(1046,250);buzz(120)}
+  if(tone==="pray"){if(i>0)bell()}else if(tone==="work"){beep(1046,250);buzz(120)}else if(s.say){beep(660,150);setTimeout(()=>beep(523,250),180)}
+  if(s.say)setTimeout(()=>speak(s.say),350);
 }
 function draw(){const s=R.steps[R.idx];if(s.kind==="reps")return;const left=Math.max(0,R.rem);
   const n=$("secN");if(s.dur>=100){n.className="long";n.textContent=fmt(Math.ceil(left))}else{n.className="";n.textContent=Math.ceil(left)}
@@ -1096,7 +1164,7 @@ function renderEu(){
   $("editProf").onclick=()=>openProfile(!!prof);
   if(prof){
     const mn=milNext();
-    const rows=[["Mișcare",corpMode==="mil"?`Program militar · săptămâna ${mn?mn[0]:8}`:`Rutina zilnică · ${LEVELS[level].name}`],
+    const rows=[["Mișcare",corpMode==="run"?runTitle():corpMode==="mil"?`Program militar · săptămâna ${mn?mn[0]:8}`:`Rutina zilnică · ${LEVELS[level].name}`],
       ["Citire",PLANS[bible.plan].n],["Rugăciune",pray.min+" minute pe zi"],["Post",prof.fastRestrict?"Doar variantele blânde":"Toate variantele, cu grijă"]];
     const L=Q.find(q=>q.k==="limits").o,lim=(prof.limits||[]).filter(i=>i!==4).map(i=>L[i].toLowerCase());
     $("recCard").innerHTML=`<div class="tag c">Programul tău</div><dl class="reclist" style="margin:0">${rows.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
@@ -1105,7 +1173,7 @@ function renderEu(){
   }else $("recCard").innerHTML=`<p>Completează profilul ca să primești un program potrivit pentru tine.</p><button class="btn small" id="mk2">Creează profilul</button>`;
   if($("mk2"))$("mk2").onclick=()=>openProfile(false);
   const cnt=k=>Object.values(log).filter(x=>x[k]).length;
-  $("stats").innerHTML=[[cnt("c"),"zile cu mișcare"],[Object.keys(mil.done).length,"sesiuni militare"],[cnt("b"),"zile de citire"],[cnt("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],[streak(),"zile active la rând"]]
+  $("stats").innerHTML=[[cnt("c"),"zile cu mișcare"],[Object.keys(mil.done).length,"sesiuni militare"],[Object.keys(run.done).length,"sesiuni de alergare"],[cnt("b"),"zile de citire"],[cnt("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],[streak(),"zile active la rând"],[Object.values(steps).reduce((a,b)=>a+b,0).toLocaleString("ro-RO"),"pași notați"]]
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
   renderSuggest();
@@ -1174,6 +1242,8 @@ const BADGES=[
  {id:"b7",n:"Cititor",g:"7",t:"b",d:"7 zile de citire",ok:()=>cntK("b")>=7},
  {id:"plan",n:"Plan terminat",g:"✓",t:"b",d:"Un plan de citire întreg",ok:()=>Object.entries(PLANS).some(([k,p])=>Object.keys(bible.done[k]||{}).length>=p.days.length)},
  {id:"r10",n:"Om al rugăciunii",g:"10",t:"r",d:"10 zile de rugăciune",ok:()=>cntK("r")>=10},
+ {id:"st10k",n:"10.000 de pași",g:"10k",t:"c",d:"10.000 de pași într-o zi",ok:()=>Object.values(steps).some(v=>v>=10000)},
+ {id:"runall",n:"Alergător",g:"30′",t:"c",d:"Programul de alergare complet",ok:()=>Object.keys(run.done).length>=24},
  {id:"blearn",n:"Cititor ucenic",g:"8",t:"b",d:"Toate lecțiile despre citire",ok:()=>Object.keys(store.get("md_blessons",{})).length>=8},
  {id:"learn",n:"Ucenic",g:"8",t:"r",d:"Toate lecțiile de rugăciune",ok:()=>Object.keys(store.get("md_lessons",{})).length>=8},
  {id:"fast",n:"Primul post",g:"P",t:"p",d:"Un post încheiat",ok:()=>fast.count>=1},
