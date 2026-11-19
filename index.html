@@ -171,6 +171,8 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.blesson .lnum{border-color:var(--rest);color:var(--rest)}
+.blesson .lnum.done{background:var(--rest);color:#141414}
 textarea.inp{resize:vertical;min-height:110px;line-height:1.45}
 .copy{text-align:center;color:var(--muted);font-size:.75rem;opacity:.8}
 .welcome{min-height:calc(100vh - 80px);min-height:calc(100dvh - 80px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
@@ -321,6 +323,8 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
   <!-- BIBLIE -->
   <section class="view" id="v-biblie" hidden>
     <div><h1>Cuvântul</h1><p class="date">Un plan de citire, un pas pe zi.</p></div>
+    <div class="seg" id="bibSeg"></div>
+    <div id="bibPlan" style="display:flex;flex-direction:column;gap:22px">
     <div class="card" id="readCard"></div>
     <details id="pickD"><summary id="pickSum">Schimbă planul</summary><div class="pickin"><div class="seg" id="planPick"></div></div></details>
     <details id="buildD"><summary>Creează-ți propriul plan</summary><div class="pickin" id="builder"></div></details>
@@ -334,6 +338,8 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
       </ul>
     </div>
     <details id="allDays"><summary id="allSum">Toate zilele</summary><ul class="days" id="dayList"></ul></details>
+    </div>
+    <div id="bibLearn" style="display:flex;flex-direction:column;gap:12px" hidden></div>
   </section>
 
   <!-- RUGĂCIUNE -->
@@ -750,6 +756,11 @@ function renderPost(){
 function renderFastCount(){$("fastCount").textContent=fast.count?`Posturi încheiate: ${fast.count}.`:"Postul nu e o dietă. Scopul e apropierea de Dumnezeu."}
 
 function renderBiblie(){
+  const bl=Object.keys(store.get("md_blessons",{})).length;
+  $("bibSeg").innerHTML=[["plan","Plan de citire",PLANS[bible.plan].n],["learn","Cum să citești",`${bl} din ${BLESSONS.length} lecții`]].map(([k,l,sub])=>`<button class="lvl" data-bm="${k}" aria-pressed="${bibMode===k}"><b style="font-size:.95rem">${l}</b><span>${esc(sub)}</span></button>`).join("");
+  $("bibSeg").querySelectorAll("[data-bm]").forEach(b=>b.onclick=()=>{bibMode=b.dataset.bm;store.set("md_bibmode",bibMode);renderBiblie()});
+  $("bibPlan").hidden=bibMode!=="plan";$("bibLearn").hidden=bibMode!=="learn";
+  if(bibMode==="learn"){renderBibLearn();return}
   $("planPick").innerHTML=Object.entries(PLANS).map(([k,p])=>{const d=bible.done[k]||{},n=Object.keys(d).length;
     return`<button class="lvl" data-p="${k}" aria-pressed="${bible.plan===k}"><b style="font-size:.9rem">${esc(p.n)}</b><span>${p.custom?"personal · ":""}${n}/${p.days.length} zile</span></button>`}).join("");
   $("planPick").querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{bible.plan=b.dataset.p;store.set("md_bible",bible);$("pickD").open=false;renderBiblie();window.scrollTo(0,0)});
@@ -829,6 +840,36 @@ function renderRug(){
   $("prayDone").hidden=!has(TODAY,"r");
 }
 
+
+
+/* ---------- Bible reading lessons ---------- */
+const BLESSONS=[
+ {t:"Ce este Biblia",txt:["Biblia nu este o singură carte, ci o bibliotecă de 66 de cărți, scrise de-a lungul a aproximativ 1.500 de ani. Are două părți: Vechiul Testament (39 de cărți, înainte de venirea lui Isus) și Noul Testament (27 de cărți, despre viața lui Isus și începutul Bisericii).","Cărțile au stiluri diferite: istorie, legi, poezie și cântări (Psalmii), înțelepciune (Proverbe), profeții, evanghelii (viața lui Isus) și scrisori către biserici. Tocmai de aceea nu se citește ca un roman, de la prima pagină până la ultima. Toate spun însă aceeași poveste mare: Dumnezeu care Își caută omul."],ref:"Cuprinsul Bibliei tale",tr:"Deschide cuprinsul de la începutul Bibliei și uită-te la lista cărților. Găsește unde începe Noul Testament și unde este Evanghelia după Ioan."},
+ {t:"Cum găsești un pasaj",txt:["Fiecare carte e împărțită în capitole, iar capitolele în versete (fraze numerotate). O trimitere ca „Ioan 3:16” înseamnă: cartea Ioan, capitolul 3, versetul 16.","„Psalmul 23” înseamnă tot psalmul 23, iar „Matei 5:1-12” înseamnă capitolul 5, de la versetul 1 până la versetul 12. Numerele mari sunt capitolele, iar cele mici, din text, sunt versetele."],ref:"Ioan 3:16; Psalmul 23",tr:"Caută singur Ioan 3:16, apoi Psalmul 23. Dacă le găsești pe amândouă, știi deja să te descurci în Biblie."},
+ {t:"De unde să începi",txt:["Pentru început nu e bine să pornești de la Geneza și să mergi pagină cu pagină: multe cărți din Vechiul Testament se înțeleg mai bine după ce îl cunoști pe Isus.","Începe cu Evanghelia după Ioan, care arată limpede cine este Isus. Apoi poți citi Marcu (scurtă și alertă), Faptele Apostolilor (cum a început Biserica), iar pentru fiecare zi Psalmii și Proverbe. Geneza e un pas următor foarte bun."],ref:"Ioan 1:1-18",tr:"Citește primele 18 versete din Ioan. Nu-ți face griji dacă nu înțelegi tot; vei reveni la ele.",plan:"ioan21"},
+ {t:"O metodă simplă în 4 pași",txt:["1. Roagă-te înainte: cere-I lui Dumnezeu să-ți deschidă ochii. 2. Citește încet, chiar de două ori, o porțiune scurtă (un capitol sau doar câteva versete). 3. Gândește-te: ce aflu despre Dumnezeu? ce aflu despre om? este o poruncă, o promisiune sau un exemplu? 4. Aplică și roagă-te: ce pot face azi cu ce am citit? Transformă ideea principală într-o rugăciune.","Nu contează cât de mult citești, ci cât de atent. Un singur verset înțeles și trăit valorează mai mult decât trei capitole citite în grabă."],ref:"Psalmul 119:18; Iacov 1:22-25",tr:"Aplică cei 4 pași la Marcu 1:35-39. Notează un singur lucru pe care îl iei cu tine azi."},
+ {t:"Contextul contează",txt:["Un verset trebuie citit împreună cu ce e înainte și după el. Întreabă-te: cine scrie, cui scrie și de ce? Este o poezie, o istorie, o lege sau o scrisoare?","De exemplu, cunoscutul „Pot totul în Hristos, care mă întărește” (Filipeni 4:13) vine după ce Pavel spune că a învățat să fie mulțumit și în lipsă, și în belșug. Nu e o promisiune că vom reuși orice ne propunem, ci că Hristos ne dă putere să trecem prin orice situație."],ref:"Filipeni 4:10-13",tr:"Citește tot pasajul, apoi spune cu cuvintele tale ce voia Pavel să transmită."},
+ {t:"Când nu înțelegi",txt:["Este normal să nu înțelegi totul, chiar și cei care citesc Biblia de ani de zile au întrebări. Notează-ți întrebarea și mergi mai departe; de multe ori răspunsul vine mai târziu.","Câteva ajutoare: citește tot capitolul, nu doar versetul; caută trimiterile de pe margine (Biblia se explică prin Biblie); folosește o traducere pe care o înțelegi (Cornilescu este cea mai cunoscută, iar Noua Traducere Românească are o limbă mai actuală); întreabă un păstor sau un prieten care citește Biblia; și roagă-te pentru înțelepciune."],ref:"Iacov 1:5; Luca 24:27",tr:"Gândește-te la un pasaj care ți s-a părut greu. Scrie întrebarea și roagă-te să primești lămurire."},
+ {t:"Scrie și ține minte",txt:["Ce scrii, ții minte mai ușor. Un caiet simplu e de ajuns: data, ce ai citit, un verset care te-a atins și un gând despre el.","Alege din când în când un verset scurt și învață-l pe de rost. Repetă-l dimineața și seara câteva zile. Cuvântul ținut în inimă te ajută exact când ai nevoie."],ref:"Psalmul 119:9-11",tr:"Scrie azi un verset care ți-a plăcut și încearcă să-l spui din memorie până diseară."},
+ {t:"Obiceiul zilnic",txt:["Mai bine 10 minute în fiecare zi decât o oră o dată pe lună. Alege o oră și un loc liniștit și leagă citirea de ceva ce faci deja (de exemplu, imediat după cafeaua de dimineață).","Dacă ai ratat o zi, nu te descuraja și nu încerca să recuperezi tot: continuă de unde ai rămas. Citește, când poți, și împreună cu alții: în familie, cu prietenii sau într-un grup."],ref:"Iosua 1:8; Faptele Apostolilor 17:11",tr:"Hotărăște ora și locul în care vei citi zilnic, apoi alege un plan și bifează prima zi."}
+];
+let bibMode=store.get("md_bibmode","plan");
+function renderBibLearn(){
+  const done=store.get("md_blessons",{}),n=Object.keys(done).length,next=BLESSONS.findIndex((_,i)=>!done[i]);
+  let h=`<div class="card"><div class="tag b">Pentru începători</div><h3>N-ai citit niciodată Biblia? Începe de aici.</h3>
+    <p class="muted">Biblia nu se citește ca o carte obișnuită, de la prima la ultima pagină. În ${BLESSONS.length} lecții scurte afli cum este alcătuită, de unde să începi și cum s-o citești ca să înțelegi și să trăiești ce citești.</p>
+    <div class="bar2"><i style="width:${(n/BLESSONS.length*100).toFixed(1)}%"></i></div><span class="muted">${n} din ${BLESSONS.length} lecții</span></div>`;
+  BLESSONS.forEach((L,i)=>{h+=`<details class="lesson blesson" ${i===next?"open":""}><summary><span class="lnum ${done[i]?"done":""}">${done[i]?"✓":i+1}</span><span>${L.t}</span></summary>
+    <div class="pickin">${L.txt.map(t=>`<p>${t}</p>`).join("")}
+    <p><b>Citește:</b> ${L.ref}</p>
+    <div class="example"><div class="tag b">Încearcă acum</div><p style="font-style:normal">${L.tr}</p></div>
+    <div class="opts" style="align-items:center">${L.plan?`<button class="btn small" data-bplan="${L.plan}" style="background:var(--rest);color:#141414">Începe „${PLANS[L.plan].n}”</button>`:""}${done[i]?'<span class="ok" style="color:var(--rest)">✓ Lecție terminată</span>':`<button class="ghost" data-blok="${i}">Am înțeles</button>`}</div></div></details>`});
+  if(n>=BLESSONS.length)h+=`<div class="donebox">Ai parcurs toate lecțiile. Acum alege un plan și citește câte puțin în fiecare zi.<div style="margin-top:10px"><button class="btn small" id="toPlan" style="background:var(--rest);color:#141414">Mergi la planul de citire</button></div></div>`;
+  $("bibLearn").innerHTML=h;
+  $("bibLearn").querySelectorAll("[data-blok]").forEach(b=>b.onclick=()=>{const d=store.get("md_blessons",{});d[b.dataset.blok]=TODAY;store.set("md_blessons",d);renderBiblie()});
+  $("bibLearn").querySelectorAll("[data-bplan]").forEach(b=>b.onclick=()=>{bible.plan=b.dataset.bplan;store.set("md_bible",bible);bibMode="plan";store.set("md_bibmode",bibMode);renderBiblie();window.scrollTo(0,0)});
+  if($("toPlan"))$("toPlan").onclick=()=>{bibMode="plan";store.set("md_bibmode",bibMode);renderBiblie();window.scrollTo(0,0)};
+}
 
 /* ---------- prayer lessons ---------- */
 const EXS=["Doamne, sunt aici. Vreau să fiu cu Tine acum.","Doamne, Tu ești… (spune ce arată textul despre El). Te laud pentru asta.","Îți mulțumesc că mi-ai arătat… Ajută-mă să trăiesc asta azi.","Tată, Îți dau ziua de azi. Nu voia mea, ci voia Ta să se facă.","Doamne, Te rog pentru… (nume). Arată-i bunătatea Ta, așa cum mi-ai arătat-o și mie.","Îți mulțumesc că m-ai ascultat. Ție să-Ți fie slava. Amin."];
@@ -1133,6 +1174,7 @@ const BADGES=[
  {id:"b7",n:"Cititor",g:"7",t:"b",d:"7 zile de citire",ok:()=>cntK("b")>=7},
  {id:"plan",n:"Plan terminat",g:"✓",t:"b",d:"Un plan de citire întreg",ok:()=>Object.entries(PLANS).some(([k,p])=>Object.keys(bible.done[k]||{}).length>=p.days.length)},
  {id:"r10",n:"Om al rugăciunii",g:"10",t:"r",d:"10 zile de rugăciune",ok:()=>cntK("r")>=10},
+ {id:"blearn",n:"Cititor ucenic",g:"8",t:"b",d:"Toate lecțiile despre citire",ok:()=>Object.keys(store.get("md_blessons",{})).length>=8},
  {id:"learn",n:"Ucenic",g:"8",t:"r",d:"Toate lecțiile de rugăciune",ok:()=>Object.keys(store.get("md_lessons",{})).length>=8},
  {id:"fast",n:"Primul post",g:"P",t:"p",d:"Un post încheiat",ok:()=>fast.count>=1},
  {id:"meas",n:"Pe drumul bun",g:"↗",t:"p",d:"Două măsurători",ok:()=>prog.length>=2}
