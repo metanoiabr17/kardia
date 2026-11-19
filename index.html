@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="description" content="Aplicație gratuită pentru trup și suflet: exerciții cu greutatea corpului, post, citirea Bibliei și rugăciune.">
+<meta name="description" content="Kardia, aplicație gratuită pentru trup și suflet: exerciții cu greutatea corpului, post, citirea Bibliei și rugăciune.">
 <meta name="theme-color" content="#2448D8" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F1614" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Trup și Suflet">
+<meta name="apple-mobile-web-app-title" content="Kardia">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
@@ -19,7 +19,7 @@
 body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
 img{max-width:100%}[hidden]{display:none!important}
 </style>
-<title>Trup și Suflet</title>
+<title>Kardia</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&display=swap">
 <style>
@@ -173,6 +173,8 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+h1.brand{font-size:2.6rem;letter-spacing:-.03em}
+.tagline{font-family:var(--display);font-weight:700;font-size:.92rem;color:var(--accent);margin-top:6px}
 .cue{white-space:pre-line}
 .toggle{display:flex;gap:10px;align-items:center;font-size:.92rem;cursor:pointer}
 .toggle input{width:20px;height:20px;accent-color:var(--pray);flex:none}
@@ -246,7 +248,7 @@ body.onb .tabs{display:none}
   <!-- AZI -->
   <section class="view" id="v-azi">
     <div class="top">
-      <div><h1>Trup și<br>Suflet</h1><div class="date" id="date"></div></div>
+      <div><h1 class="brand">Kardia</h1><div class="tagline">Pentru trup și suflet</div><div class="date" id="date"></div></div>
       <div class="streak"><div class="num" id="streak">0</div><small>zile active<br>la rând</small></div>
     </div>
     <div class="hero" id="hero"></div>
@@ -1136,7 +1138,7 @@ if(!prof&&!store.get("md_skipprof",0)&&!location.hash)openProfile(false);else sh
 
 <div class="sheet-bg" id="instSheet" hidden>
   <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="instT">
-    <div class="sheet-head"><img src="icon-192.png" alt="" width="64" height="64"><div><h3 id="instT">Instalează Trup și Suflet</h3><p class="muted">Gratuit, fără magazin de aplicații.</p></div></div>
+    <div class="sheet-head"><img src="icon-192.png" alt="" width="64" height="64"><div><h3 id="instT">Instalează Kardia</h3><p class="muted">Gratuit, fără magazin de aplicații.</p></div></div>
     <p id="instLead">Pune aplicația pe ecranul telefonului. Se va deschide pe tot ecranul, ca orice altă aplicație, și va merge și fără internet.</p>
     <ol class="steps" id="instSteps" hidden></ol>
     <button class="btn" id="sheetGo">Instalează</button>
