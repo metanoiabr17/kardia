@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Kardia, aplicație gratuită pentru trup și suflet: exerciții cu greutatea corpului, post, citirea Bibliei și rugăciune.">
-<meta name="theme-color" content="#2448D8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#EDF1EF" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0F1614" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1161,6 +1161,13 @@ if(!prof&&!store.get("md_skipprof",0)&&!location.hash)openProfile(false);else sh
 </style>
 <script>
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+(function(){ /* pe Android, în aplicația instalată: ascunde bara de stare și bara de navigare la prima atingere */
+  const inst=(window.matchMedia&&["fullscreen","standalone","minimal-ui"].some(m=>matchMedia("(display-mode: "+m+")").matches));
+  const el=document.documentElement;
+  if(!inst||!/android/i.test(navigator.userAgent)||!el.requestFullscreen)return;
+  const go=()=>{if(!document.fullscreenElement){try{el.requestFullscreen({navigationUI:"hide"}).catch(()=>{})}catch(e){}}};
+  ["touchend","click"].forEach(t=>document.addEventListener(t,go,{passive:true}));
+})();
 (function(){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
   const ua=navigator.userAgent||"";
