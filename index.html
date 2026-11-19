@@ -1103,7 +1103,7 @@ $("sgSend").onclick=async()=>{
   if(navigator.onLine===false){st.textContent="Nu ai internet. Încearcă din nou când ești online.";return}
   btn.disabled=true;btn.textContent="Se trimite…";st.textContent="";
   try{
-    const r=await fetch("https://formsubmit.co/ajax/daniel.mehedinti@gmail.com",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+    const r=await fetch("https://formsubmit.co/ajax/c946e22fc8f54e5b758d91ef1f2bcbe1",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
       body:JSON.stringify({_subject:`Kardia – sugestie nouă (${sgType})`,_template:"table",_captcha:"false",Tip:sgType,Mesaj:msg,Nume:$("sgName").value.trim()||"anonim",Data:new Date().toLocaleString("ro-RO")})});
     const j=await r.json().catch(()=>({}));
     if(r.ok&&String(j.success)==="true"){$("sgMsg").value="";st.textContent="";
