@@ -171,6 +171,13 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.remlist{display:flex;flex-direction:column;gap:8px}
+.remrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-top:1px solid var(--line)}
+.remrow:first-child{border-top:0}
+.remrow .toggle input{accent-color:var(--accent)}
+.remt{width:auto;max-width:130px;padding:8px 10px}
+.remt:disabled{opacity:.4}
+.blink.gcal::after{content:"＋";color:var(--accent)}
 .yv{display:flex;flex-direction:column;gap:8px;font-size:.85rem}
 .blink{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none;border-radius:999px;padding:7px 12px;font-weight:600;font-size:.85rem}
 .blink::after{content:"↗";color:var(--rest)}
@@ -382,6 +389,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <div class="top"><div><h1 id="euName">Profilul tău</h1><p class="date" id="euGoal"></p></div><button class="ghost" id="editProf">Editează</button></div>
     <div class="card" id="recCard"></div>
     <button class="btn" id="instOpen" hidden>Instalează aplicația pe telefon</button>
+    <section><h2>Mementouri</h2><div class="card" id="remCard"></div></section>
     <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
     <section><h2 id="medalsT">Medalii</h2><div class="medals" id="medals"></div></section>
     <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0">Progresul fizic</h2>
@@ -1203,6 +1211,7 @@ function renderEu(){
   $("stats").innerHTML=[[cnt("c"),"zile cu mișcare"],[Object.keys(mil.done).length,"sesiuni militare"],[Object.keys(run.done).length,"sesiuni de alergare"],[cnt("b"),"zile de citire"],[cnt("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],[streak(),"zile active la rând"],[Object.values(steps).reduce((a,b)=>a+b,0).toLocaleString("ro-RO"),"pași notați"]]
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
+  renderRem();
   renderSuggest();
   let ch="";
   METRICS.forEach(([k,n,u])=>{const pts=prog.filter(e=>e[k]!=null).map(e=>({d:e.d,v:e[k]}));if(!pts.length)return;
@@ -1225,6 +1234,43 @@ $("saveProg").onclick=()=>{
   addProg(v);renderEu();$("progMsg").textContent="Salvat";setTimeout(()=>$("progMsg").textContent="",2000);
 };
 
+
+
+/* ---------- reminders (via the phone's calendar) ---------- */
+const REM=[["c","Mișcare","E timpul pentru mișcare. Câteva minute contează!"],["b","Cuvântul","Citirea de azi te așteaptă."],["r","Rugăciune","Câteva minute cu Dumnezeu."]];
+let rem=store.get("md_rem",{c:{on:true,t:"07:30"},b:{on:true,t:"20:30"},r:{on:true,t:"21:00"}});
+const isIOS=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+const isAndroid=/android/i.test(navigator.userAgent);
+function nextStart(t){const [h,m]=t.split(":").map(Number);const d=new Date();d.setHours(h,m,0,0);if(d<new Date())d.setDate(d.getDate()+1);return d}
+const icsTime=d=>`${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}T${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}00`;
+function gcalUrl(k){const [,n,msg]=REM.find(x=>x[0]===k),a=nextStart(rem[k].t),b=new Date(a.getTime()+10*60000);
+  let tz="Europe/Bucharest";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz}catch(e){}
+  return"https://calendar.google.com/calendar/render?action=TEMPLATE&text="+encodeURIComponent("Kardia: "+n.toLowerCase())+"&dates="+icsTime(a)+"/"+icsTime(b)+"&ctz="+encodeURIComponent(tz)+"&recur="+encodeURIComponent("RRULE:FREQ=DAILY")+"&details="+encodeURIComponent(msg+"\nDeschide Kardia: https://kardiaapp.ro")}
+function downloadIcs(){
+  const now=new Date(),stamp=icsTime(now)+"";const L=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//Kardia//Mementouri//RO","CALSCALE:GREGORIAN","METHOD:PUBLISH"];
+  REM.forEach(([k,n,msg])=>{if(!rem[k].on)return;const a=nextStart(rem[k].t);
+    L.push("BEGIN:VEVENT","UID:kardia-"+k+"-"+Date.now()+"@kardiaapp.ro","DTSTAMP:"+stamp,"DTSTART:"+icsTime(a),"DURATION:PT10M","RRULE:FREQ=DAILY",
+      "SUMMARY:Kardia: "+n.toLowerCase(),"DESCRIPTION:"+msg+"\\nDeschide Kardia: https://kardiaapp.ro","URL:https://kardiaapp.ro",
+      "BEGIN:VALARM","ACTION:DISPLAY","DESCRIPTION:Kardia: "+n.toLowerCase(),"TRIGGER:PT0M","END:VALARM","END:VEVENT")});
+  L.push("END:VCALENDAR");
+  const blob=new Blob([L.join("\r\n")],{type:"text/calendar;charset=utf-8"}),url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="kardia-mementouri.ics";document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+  $("remMsg").textContent=isIOS?"Apasă „Adaugă tot” în fereastra care se deschide.":"Deschide fișierul descărcat cu aplicația de calendar.";
+}
+function renderRem(){
+  const any=REM.some(([k])=>rem[k].on);
+  $("remCard").innerHTML=`<p class="muted">Alege la ce oră vrei să-ți amintească telefonul. Mementourile se pun în calendarul tău și te anunță în fiecare zi, chiar dacă aplicația e închisă.</p>
+    <div class="remlist">${REM.map(([k,n])=>`<div class="remrow"><label class="toggle"><input type="checkbox" data-ron="${k}" ${rem[k].on?"checked":""}> ${n}</label><input class="inp remt" type="time" id="rt-${k}" data-rt="${k}" value="${rem[k].t}" aria-label="Ora pentru ${n}" ${rem[k].on?"":"disabled"}></div>`).join("")}</div>
+    ${isAndroid?`<div class="field"><span class="flabel">Adaugă în Google Calendar</span><div class="opts">${REM.filter(([k])=>rem[k].on).map(([k,n])=>`<a class="blink gcal" href="${gcalUrl(k)}" target="_blank" rel="noopener">${n} · ${rem[k].t}</a>`).join("")||'<span class="muted">Activează cel puțin un memento.</span>'}</div>
+      <span class="muted">Apasă pe fiecare, apoi pe „Salvează” în Google Calendar.</span></div>
+      <button class="ghost" id="remIcs" ${any?"":"disabled"}>Sau descarcă pentru alt calendar</button>`
+     :`<button class="btn small" id="remIcs" ${any?"":"disabled"}>${isIOS?"Adaugă în Calendarul iPhone":"Adaugă în calendar"}</button>`}
+    <span class="muted" id="remMsg" role="status"></span>
+    <p class="muted">Dacă schimbi orele, adaugă-le din nou și șterge din calendar mementourile vechi.</p>`;
+  $("remCard").querySelectorAll("[data-ron]").forEach(c=>c.onchange=()=>{rem[c.dataset.ron].on=c.checked;store.set("md_rem",rem);renderRem()});
+  $("remCard").querySelectorAll("[data-rt]").forEach(i=>i.onchange=()=>{if(i.value){rem[i.dataset.rt].t=i.value;store.set("md_rem",rem);renderRem()}});
+  if($("remIcs"))$("remIcs").onclick=downloadIcs;
+}
 
 /* ---------- suggestions ---------- */
 let sgType="Idee";
