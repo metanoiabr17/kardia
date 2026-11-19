@@ -922,7 +922,10 @@ function renderRun(){
 /* ---------- links to the online Bible (YouVersion, Cornilescu) ---------- */
 const USFM="GEN EXO LEV NUM DEU JOS JDG RUT 1SA 2SA 1KI 2KI 1CH 2CH EZR NEH EST JOB PSA PRO ECC SNG ISA JER LAM EZK DAN HOS JOL AMO OBA JON MIC NAM HAB ZEP HAG ZEC MAL MAT MRK LUK JHN ACT ROM 1CO 2CO GAL EPH PHP COL 1TH 2TH 1TI 2TI TIT PHM HEB JAS 1PE 2PE 1JN 2JN 3JN JUD REV".split(" ");
 const BCODE={};[...OT,...NT].forEach((b,i)=>BCODE[b[0]]=USFM[i]);BCODE["Psalmul"]="PSA";
-const yvUrl=(code,ch)=>`https://www.bible.com/bible/191/${code}.${ch}.VDC`;
+const BVER={VDC:{id:191,n:"Cornilescu"},NTR:{id:126,n:"NTR"}};
+let bver=store.get("md_bver","VDC");if(!BVER[bver])bver="VDC";
+const yvUrl=(code,ch)=>`https://www.bible.com/bible/${BVER[bver].id}/${code}.${ch}.${bver}`;
+document.addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-bver]");if(!b)return;bver=b.dataset.bver;store.set("md_bver",bver);render()});
 function readLinks(text){
   const out=[];
   text.split(";").forEach(seg=>{const m=seg.trim().match(/^(.+?)\s+(\d[\d,\s–:\-]*)$/);if(!m)return;const code=BCODE[m[1]];if(!code)return;
@@ -930,7 +933,7 @@ function readLinks(text){
     const label=m[1]==="Psalmii"||m[1]==="Psalmul"?"Psalmul":m[1];
     const multi=m[2].includes(",");nums.forEach(n=>{if(n>0)out.push(`<a class="blink" href="${yvUrl(code,n)}" target="_blank" rel="noopener">${label} ${multi?n:m[2].trim()}</a>`)})});
   if(!out.length)return"";
-  return`<div class="yv"><span class="muted">Nu ai o Biblie la îndemână? Citește aici, gratuit, în YouVersion (traducerea Cornilescu):</span><div class="opts">${out.join("")}</div></div>`;
+  return`<div class="yv"><span class="muted">Nu ai o Biblie la îndemână? Citește aici, gratuit, în YouVersion:</span><div class="chipset">${Object.entries(BVER).map(([k,v])=>`<button type="button" class="chip sm" data-bver="${k}" aria-pressed="${bver===k}">${v.n}</button>`).join("")}</div><div class="opts">${out.join("")}</div></div>`;
 }
 
 /* ---------- Bible reading lessons ---------- */
