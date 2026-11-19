@@ -171,6 +171,9 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.pushon{display:flex;flex-direction:column;gap:8px}
+.calalt{background:transparent;border-color:var(--line)}
+.calalt summary{font-weight:500;font-size:.9rem;color:var(--muted)}
 .remlist{display:flex;flex-direction:column;gap:8px}
 .remrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 0;border-top:1px solid var(--line)}
 .remrow:first-child{border-top:0}
@@ -1259,17 +1262,61 @@ function downloadIcs(){
 }
 function renderRem(){
   const any=REM.some(([k])=>rem[k].on);
-  $("remCard").innerHTML=`<p class="muted">Alege la ce oră vrei să-ți amintească telefonul. Mementourile se pun în calendarul tău și te anunță în fiecare zi, chiar dacă aplicația e închisă.</p>
+  $("remCard").innerHTML=`<p class="muted">Alege orele, iar Kardia îți trimite în fiecare zi o notificare, chiar dacă aplicația e închisă.</p>
     <div class="remlist">${REM.map(([k,n])=>`<div class="remrow"><label class="toggle"><input type="checkbox" data-ron="${k}" ${rem[k].on?"checked":""}> ${n}</label><input class="inp remt" type="time" id="rt-${k}" data-rt="${k}" value="${rem[k].t}" aria-label="Ora pentru ${n}" ${rem[k].on?"":"disabled"}></div>`).join("")}</div>
-    ${isAndroid?`<div class="field"><span class="flabel">Adaugă în Google Calendar</span><div class="opts">${REM.filter(([k])=>rem[k].on).map(([k,n])=>`<a class="blink gcal" href="${gcalUrl(k)}" target="_blank" rel="noopener">${n} · ${rem[k].t}</a>`).join("")||'<span class="muted">Activează cel puțin un memento.</span>'}</div>
-      <span class="muted">Apasă pe fiecare, apoi pe „Salvează” în Google Calendar.</span></div>
-      <button class="ghost" id="remIcs" ${any?"":"disabled"}>Sau descarcă pentru alt calendar</button>`
-     :`<button class="btn small" id="remIcs" ${any?"":"disabled"}>${isIOS?"Adaugă în Calendarul iPhone":"Adaugă în calendar"}</button>`}
-    <span class="muted" id="remMsg" role="status"></span>
-    <p class="muted">Dacă schimbi orele, adaugă-le din nou și șterge din calendar mementourile vechi.</p>`;
-  $("remCard").querySelectorAll("[data-ron]").forEach(c=>c.onchange=()=>{rem[c.dataset.ron].on=c.checked;store.set("md_rem",rem);renderRem()});
-  $("remCard").querySelectorAll("[data-rt]").forEach(i=>i.onchange=()=>{if(i.value){rem[i.dataset.rt].t=i.value;store.set("md_rem",rem);renderRem()}});
+    ${pushOn?`<div class="pushon"><span class="ok">✓ Notificări active</span><div class="opts"><button class="ghost" id="pTest">Trimite un test</button><button class="ghost" id="pOff">Oprește</button></div></div>`
+            :`<button class="btn" id="pOn" ${any?"":"disabled"}>Activează notificările</button>`}
+    <span class="muted" id="pMsg" role="status"></span>
+    ${isIOS?'<p class="muted">Pe iPhone, notificările merg doar cu aplicația instalată pe ecranul principal (iOS 16.4 sau mai nou).</p>':""}
+    <details class="calalt"><summary>Altă variantă: mementouri în calendar</summary><div class="pickin">
+      ${isAndroid?`<div class="opts">${REM.filter(([k])=>rem[k].on).map(([k,n])=>`<a class="blink gcal" href="${gcalUrl(k)}" target="_blank" rel="noopener">${n} · ${rem[k].t}</a>`).join("")||'<span class="muted">Activează cel puțin un memento.</span>'}</div>
+        <span class="muted">Apasă pe fiecare, apoi pe „Salvează” în Google Calendar.</span>
+        <button class="ghost" id="remIcs" ${any?"":"disabled"}>Sau descarcă pentru alt calendar</button>`
+       :`<button class="ghost" id="remIcs" ${any?"":"disabled"}>${isIOS?"Adaugă în Calendarul iPhone":"Adaugă în calendar"}</button>`}
+      <span class="muted" id="remMsg" role="status"></span></div></details>`;
+  $("remCard").querySelectorAll("[data-ron]").forEach(c=>c.onchange=()=>{rem[c.dataset.ron].on=c.checked;store.set("md_rem",rem);renderRem();pushSync()});
+  $("remCard").querySelectorAll("[data-rt]").forEach(i=>i.onchange=()=>{if(i.value){rem[i.dataset.rt].t=i.value;store.set("md_rem",rem);renderRem();pushSync();pMsg(pushOn?"Ora a fost actualizată.":"")}});
   if($("remIcs"))$("remIcs").onclick=downloadIcs;
+  if($("pOn"))$("pOn").onclick=pushEnable;
+  if($("pOff"))$("pOff").onclick=pushDisable;
+  if($("pTest"))$("pTest").onclick=pushTest;
+}
+
+/* ---------- push notifications (server: push.kardiaapp.ro, Cloudflare Worker) ---------- */
+const PUSH_URL="https://push.kardiaapp.ro",VAPID_PUB="BFKbV7bCiq63QFQHIntX9IFNO2KKyQnLcnxWOiHg9g2TgXSlPgRp5jpGJCarh_uR8Add3Cpg9GBJ2hs1tmMgpXI";
+let pushOn=store.get("md_push",false);
+const pushSupported=()=>"serviceWorker" in navigator&&"PushManager" in window&&"Notification" in window;
+const installedApp=()=>(window.matchMedia&&["fullscreen","standalone","minimal-ui"].some(m=>matchMedia("(display-mode: "+m+")").matches))||navigator.standalone===true;
+const b64u8=b=>{const s=atob((b+"=".repeat((4-b.length%4)%4)).replace(/-/g,"+").replace(/_/g,"/"));return Uint8Array.from(s,c=>c.charCodeAt(0))};
+const pMsg=t=>{const el=$("pMsg");if(el)el.textContent=t};
+async function pushReg(){if(!pushSupported())return null;try{return await navigator.serviceWorker.getRegistration()||null}catch(e){return null}}
+async function pushPost(path,sub){let tz="Europe/Bucharest";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz}catch(e){}
+  const r=await fetch(PUSH_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sub,rem,tz})});
+  const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error("server");return j}
+async function pushEnable(){
+  const reg=await pushReg();
+  if(!reg){pMsg("Notificările merg în aplicația instalată de pe kardiaapp.ro.");return}
+  if(isIOS&&!installedApp()){pMsg("Pe iPhone, instalează mai întâi aplicația pe ecranul principal și deschide-o din iconiță. Apoi activează notificările de aici.");return}
+  pMsg("Se activează…");
+  try{
+    const perm=await Notification.requestPermission();
+    if(perm!=="granted"){pMsg("Notificările nu sunt permise. Le poți porni din setările telefonului, la Kardia.");return}
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64u8(VAPID_PUB)});
+    await pushPost("/subscribe",sub.toJSON());
+    pushOn=true;store.set("md_push",true);renderRem();pMsg("Gata! Primești notificări la orele alese.");
+  }catch(e){pMsg("Nu s-au putut activa notificările. Verifică internetul și încearcă din nou.")}
+}
+async function pushSync(){if(!pushOn)return;try{const reg=await pushReg(),sub=reg&&await reg.pushManager.getSubscription();if(sub)await pushPost("/subscribe",sub.toJSON())}catch(e){}}
+async function pushDisable(){
+  try{const reg=await pushReg(),sub=reg&&await reg.pushManager.getSubscription();if(sub){try{await pushPost("/unsubscribe",sub.toJSON())}catch(e){}await sub.unsubscribe().catch(()=>{})}}catch(e){}
+  pushOn=false;store.set("md_push",false);renderRem();pMsg("Notificările sunt oprite.");
+}
+async function pushTest(){
+  pMsg("Se trimite…");
+  try{const reg=await pushReg(),sub=reg&&await reg.pushManager.getSubscription();if(!sub){pushOn=false;store.set("md_push",false);renderRem();pMsg("Notificările nu mai sunt active. Activează-le din nou.");return}
+    await pushPost("/test",sub.toJSON());pMsg("Ți-am trimis o notificare de test. Ar trebui să apară în câteva secunde.")}
+  catch(e){pMsg("Nu s-a putut trimite testul. Încearcă din nou.")}
 }
 
 /* ---------- suggestions ---------- */
