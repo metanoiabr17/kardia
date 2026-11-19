@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="ro">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Aplicație gratuită pentru trup și suflet: exerciții cu greutatea corpului, post, citirea Bibliei și rugăciune.">
+<meta name="theme-color" content="#2448D8" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1614" media="(prefers-color-scheme: dark)">
+<meta name="format-detection" content="telephone=no">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Trup și Suflet">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
+<style>
+:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
+img{max-width:100%}[hidden]{display:none!important}
+</style>
+<title>Trup și Suflet</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: phone-app column with a bottom tab bar; guided sessions (workout, prayer) run in a full-screen layer with a countdown ring */
+:root{
+  --bg:#EDF1EF; --surface:#FFFFFF; --ink:#13201B; --muted:#5B6B64; --line:#D5DDD9;
+  --accent:#2448D8; --accent-ink:#FFFFFF; --rest:#C98F00; --pray:#7A4FB8; --soft:#E1E7FB; --warn:#FFF4D6; --hero1:#2448D8; --hero2:#7A3FB8;
+  --display:"Archivo","Arial Narrow",system-ui,sans-serif;
+  --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0F1614; --surface:#18211E; --ink:#E8EEEB; --muted:#93A39C; --line:#2A3632;
+  --accent:#6F8CFF; --accent-ink:#0B1020; --rest:#F2C14A; --pray:#B79BFF; --soft:#1E2747; --warn:#2E2814; --hero1:#22348F; --hero2:#55307F; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1614; --surface:#18211E; --ink:#E8EEEB; --muted:#93A39C; --line:#2A3632;
+  --accent:#6F8CFF; --accent-ink:#0B1020; --rest:#F2C14A; --pray:#B79BFF; --soft:#1E2747; --warn:#2E2814; --hero1:#22348F; --hero2:#55307F; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+summary::-webkit-details-marker{display:none}
+summary{list-style:none}
+summary::after{content:"▾";margin-left:auto;padding-left:8px;color:var(--muted)}
+details[open]>summary::after{content:"▴"}
+details>summary{display:flex;align-items:center;gap:10px}
+.wrap{max-width:520px;margin:0 auto;padding-block:20px calc(96px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.view{display:flex;flex-direction:column;gap:22px}
+h1,h2,h3,.num{font-family:var(--display)}
+h1{font-size:2rem;font-weight:900;letter-spacing:-.02em;line-height:1;margin:0;text-wrap:balance}
+h2{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);margin:0 0 10px}
+h3{margin:0;font-size:1.15rem;font-weight:800;line-height:1.2}
+p{margin:0}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.date{color:var(--muted);margin-top:6px;font-size:.9rem}
+.streak{text-align:right}
+.streak .num{font-size:2.4rem;font-weight:900;line-height:1;color:var(--accent);font-variant-numeric:tabular-nums}
+.streak small{display:block;color:var(--muted);font-size:.72rem;text-transform:uppercase;letter-spacing:.08em}
+.muted{color:var(--muted);font-size:.88rem}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{display:flex;flex-direction:column;align-items:center;gap:5px;font-size:.72rem;color:var(--muted);padding:8px 0;border-radius:10px}
+.day.today{background:var(--surface);color:var(--ink);font-weight:600}
+.dots{display:flex;gap:3px}
+.dots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.dots i.c{background:var(--accent)} .dots i.b{background:var(--rest)} .dots i.r{background:var(--pray)}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.78rem;color:var(--muted);margin-top:8px}
+.legend span{display:flex;align-items:center;gap:5px}
+.legend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.row>div{min-width:0}
+.tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.tag.c{color:var(--accent)} .tag.b{color:var(--rest)} .tag.r{color:var(--pray)} .tag.p{color:var(--muted)}
+.ok{font-size:.8rem;font-weight:600;color:var(--accent);white-space:nowrap}
+.seg,.levels,.chips{display:grid;gap:8px}
+.seg{grid-template-columns:1fr 1fr}
+.levels{grid-template-columns:repeat(3,1fr)}
+.chips{grid-template-columns:repeat(auto-fit,minmax(70px,1fr))}
+.lvl{font:inherit;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:12px;padding:10px 6px;cursor:pointer;text-align:center}
+.lvl b{display:block;font-family:var(--display);font-size:1rem}
+.lvl span{font-size:.78rem;color:var(--muted)}
+.lvl[aria-pressed="true"]{border-color:var(--accent);background:var(--soft)}
+button:focus-visible,summary:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.plan{background:var(--surface);border-radius:16px;border:1px solid var(--line);overflow:hidden}
+.plan ol{list-style:none;margin:0;padding:0}
+.plan li{display:grid;grid-template-columns:28px 1fr auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line)}
+.plan li:first-child{border-top:0}
+.plan .i{font-family:var(--display);font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums}
+.plan .n{font-weight:600;min-width:0}
+.plan .z{display:block;font-size:.75rem;color:var(--muted);font-weight:400}
+.plan .t{font-variant-numeric:tabular-nums;color:var(--muted);font-size:.85rem;text-align:right}
+.summary{display:flex;justify-content:space-between;gap:10px;padding:10px 14px;background:var(--soft);font-size:.85rem;flex-wrap:wrap}
+.btn{font:inherit;font-family:var(--display);font-weight:800;font-size:1.1rem;letter-spacing:.02em;
+  background:var(--accent);color:var(--accent-ink);border:0;border-radius:14px;padding:15px;cursor:pointer;width:100%}
+.btn.pray{background:var(--pray);color:var(--accent-ink)}
+.btn.small{font-size:.95rem;padding:10px 14px;width:auto;border-radius:12px;white-space:nowrap;flex:none}
+.ghost{font:inherit;background:transparent;color:var(--ink);border:2px solid var(--line);border-radius:12px;padding:9px 14px;cursor:pointer;font-weight:600}
+.donebox{background:var(--soft);border-radius:14px;padding:12px 14px;text-align:center;font-weight:600}
+.warnbox{background:var(--warn);border-radius:14px;padding:12px 14px;font-size:.88rem;display:flex;flex-direction:column;gap:6px}
+.grid8{display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px;align-items:center;font-size:.8rem}
+.grid8 .h{color:var(--muted);text-align:center;font-weight:600}
+.cell{font:inherit;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:9px;padding:6px 0;cursor:pointer;font-weight:600;font-size:.8rem}
+.cell.done{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.cell.sel{border-color:var(--accent);box-shadow:0 0 0 2px var(--soft)}
+details{background:var(--surface);border:1px solid var(--line);border-radius:14px}
+summary{cursor:pointer;padding:12px 14px;font-weight:600}
+.days{list-style:none;margin:0;padding:0 14px 10px;max-height:340px;overflow:auto}
+.days li{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}
+.days input{width:20px;height:20px;margin-top:1px;accent-color:var(--accent);flex:none}
+.days label{min-width:0;font-size:.9rem}
+.days b{font-family:var(--display);margin-right:6px}
+.reading{font-family:var(--display);font-weight:800;font-size:1.4rem;line-height:1.2}
+ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:column;gap:4px}
+.bar2{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.bar2 i{display:block;height:100%;background:var(--rest)}
+.big{font-family:var(--display);font-weight:900;font-size:2.4rem;line-height:1;font-variant-numeric:tabular-nums}
+.opts{display:flex;gap:8px;flex-wrap:wrap}
+.foot{color:var(--muted);font-size:.8rem}
+.share{display:flex;gap:10px;align-items:center;flex-wrap:wrap;color:var(--muted);font-size:.85rem}
+
+/* bottom tabs */
+.tabs{position:fixed;left:0;right:0;bottom:0;z-index:10;background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+.tabs-in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr)}
+.tab{font:inherit;background:none;border:0;color:var(--muted);padding:10px 0 12px;cursor:pointer;font-size:.68rem;min-width:0;font-weight:600;display:flex;flex-direction:column;align-items:center;gap:4px}
+.tab svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab[aria-current="page"]{color:var(--accent)}
+
+/* runner layer */
+.run{position:fixed;inset:0;z-index:20;background:var(--bg);display:flex;flex-direction:column;
+  padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));overflow:auto}
+.run-in{max-width:520px;width:100%;margin:0 auto;flex:1;display:flex;flex-direction:column;gap:14px}
+.rbar{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.prog{height:6px;background:var(--line);border-radius:3px;overflow:hidden}
+.prog i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.phase{font-family:var(--display);font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.85rem;color:var(--accent);text-align:center}
+.phase.rest{color:var(--rest)} .phase.pray{color:var(--pray)}
+.ringbox{position:relative;width:min(62vw,280px);aspect-ratio:1;margin:4px auto 0;max-width:100%;flex:none}
+.ringbox svg{width:100%;height:100%;transform:rotate(-90deg)}
+.track{fill:none;stroke:var(--line);stroke-width:10}
+.arc{fill:none;stroke:var(--accent);stroke-width:10;stroke-linecap:round}
+.arc.rest{stroke:var(--rest)} .arc.pray{stroke:var(--pray)}
+.sec{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:var(--display)}
+.sec span{font-weight:900;font-size:clamp(3.6rem,20vw,6rem);line-height:1;font-variant-numeric:tabular-nums}
+.sec span.long{font-size:clamp(2.6rem,14vw,4.2rem)}
+.sec small{font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-size:.8rem}
+.exname{font-family:var(--display);font-weight:900;font-size:1.8rem;line-height:1.05;text-align:center;margin:0;text-wrap:balance}
+.cue{text-align:center;color:var(--muted);margin:0 auto;max-width:40ch}
+.next{text-align:center;font-size:.9rem;color:var(--muted)}
+.next b{color:var(--ink)}
+.ctrl{margin-top:auto;display:grid;grid-template-columns:1fr 2fr 1fr;gap:10px}
+.ctrl .btn{padding:14px}
+@media (prefers-reduced-motion:reduce){.prog i{transition:none}}
+.chipset{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font:inherit;border:2px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:7px 13px;cursor:pointer;font-size:.88rem}
+.chip[aria-pressed="true"]{border-color:var(--accent);background:var(--soft);font-weight:600}
+.field{display:flex;flex-direction:column;gap:8px}
+.flabel{font-weight:600;font-size:.95rem}
+.inp{font:inherit;font-size:16px;padding:10px 12px;border:2px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);width:100%;min-width:0}
+.form{display:flex;flex-direction:column;gap:20px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mini{font:inherit;font-size:.75rem;border:1px solid var(--line);background:transparent;color:var(--muted);border-radius:8px;padding:4px 8px;cursor:pointer;white-space:nowrap}
+.plan li.has-act{grid-template-columns:28px 1fr auto auto}
+.sub{font-size:.75rem;color:var(--rest);font-weight:600;display:block}
+.cell.skip{opacity:.45}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.stat b{display:block;font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.stat span{font-size:.78rem;color:var(--muted)}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{fill:var(--muted);font-size:10px;font-family:var(--body)}
+.reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
+.reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
+body.onb .tabs{display:none}
+.cue{white-space:pre-line}
+.toggle{display:flex;gap:10px;align-items:center;font-size:.92rem;cursor:pointer}
+.toggle input{width:20px;height:20px;accent-color:var(--pray);flex:none}
+.lesson summary{display:flex;align-items:center;gap:10px}
+.lnum{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--pray);color:var(--pray);font-family:var(--display);font-weight:800;font-size:.85rem;flex:none}
+.lnum.done{background:var(--pray);color:var(--accent-ink)}
+.lesson p{font-size:.94rem}
+.example{background:var(--soft);border-radius:12px;padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.example p{font-style:italic}
+.pickin{padding:0 14px 14px;display:flex;flex-direction:column;gap:16px}
+.chip.sm{padding:5px 10px;font-size:.8rem}
+.chip.q{border-style:dashed}
+.myplans{list-style:none;margin:0;padding:0}
+.myplans li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.9rem}
+.myplans li span{min-width:0}
+/* hero with daily rings */
+.hero{background:linear-gradient(150deg,var(--hero1),var(--hero2));color:#FFFFFF;border-radius:22px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.rings{width:112px;height:112px}
+.rings svg{width:100%;height:100%;transform:rotate(-90deg)}
+.rings circle{fill:none;stroke-width:9;stroke-linecap:round}
+.rings .tr{stroke:rgba(255,255,255,.18)}
+.rings .a{transition:stroke-dashoffset 1.1s cubic-bezier(.2,.8,.2,1)}
+.hero p{color:rgba(255,255,255,.85);font-size:.88rem}
+.hero h3{color:#FFFFFF;font-size:1.2rem;text-wrap:balance}
+.hlegend{display:flex;gap:10px;flex-wrap:wrap;font-size:.74rem;color:rgba(255,255,255,.9);margin-top:6px}
+.hlegend span{display:flex;align-items:center;gap:4px}
+.hlegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
+.lvrow{font-family:var(--display);font-weight:800;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-variant-numeric:tabular-nums}
+.xp{height:8px;background:rgba(255,255,255,.22);border-radius:4px;overflow:hidden;margin-top:5px}
+.xp i{display:block;height:100%;width:0;background:#FFFFFF;border-radius:4px;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+/* medals */
+.medals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.medal{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 4px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
+.medal b{font-size:.78rem;line-height:1.2}
+.medal span{font-size:.68rem;color:var(--muted);line-height:1.25}
+.disc{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:900;color:#FFFFFF;font-size:1rem;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),0 0 0 3px var(--surface),0 0 0 5px var(--line)}
+.disc.c{background:var(--hero1)} .disc.b{background:#C98F00} .disc.r{background:var(--hero2)} .disc.p{background:#5B6B64}
+.disc.x{background:linear-gradient(135deg,var(--hero1),#C98F00,var(--hero2))}
+.medal.locked .disc{background:var(--line);color:var(--muted);box-shadow:none}
+.medal.locked b{color:var(--muted)}
+/* celebration */
+.cele{position:fixed;inset:0;z-index:30;background:rgba(8,14,12,.6);display:grid;place-items:center;overflow:auto;
+  padding-top:calc(16px + env(safe-area-inset-top,0px));padding-bottom:calc(16px + env(safe-area-inset-bottom,0px));
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cele-card{background:var(--surface);border-radius:24px;padding:26px 20px 20px;max-width:380px;width:100%;text-align:center;display:flex;flex-direction:column;gap:10px;align-items:center;animation:pop .45s cubic-bezier(.2,1.4,.4,1)}
+.check{width:76px;height:76px}
+.check circle{fill:var(--soft);stroke:var(--accent);stroke-width:3}
+.check path{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .5s .25s forwards}
+.cele h3{font-size:1.5rem;font-weight:900}
+.pts{font-family:var(--display);font-weight:900;font-size:2.2rem;color:var(--accent);line-height:1}
+.lvup{background:var(--soft);border-radius:12px;padding:8px 12px;font-weight:600;font-size:.9rem}
+#confetti{position:fixed;inset:0;z-index:31;pointer-events:none;width:100%;height:100%}
+/* micro-interactions */
+.btn,.lvl,.chip,.cell,.ghost,.mini,.tab{transition:transform .12s ease,background-color .2s,border-color .2s}
+.btn:active,.lvl:active,.chip:active,.cell:active,.ghost:active,.mini:active,.tab:active{transform:scale(.95)}
+.tab[aria-current="page"] svg{transform:translateY(-2px);transition:transform .2s}
+.view:not([hidden]){animation:rise .3s ease-out}
+.sec span.pulse{animation:pulse .45s ease-out}
+.day.today .dots i{transform:scale(1.15)}
+@keyframes rise{from{transform:translateY(10px);opacity:.5}}
+@keyframes pulse{from{transform:scale(1.22)}}
+@keyframes pop{from{transform:scale(.85);opacity:.4}}
+@keyframes draw{to{stroke-dashoffset:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.check path{stroke-dashoffset:0}}
+</style>
+</head>
+<body>
+
+
+<main class="wrap">
+  <!-- AZI -->
+  <section class="view" id="v-azi">
+    <div class="top">
+      <div><h1>Trup și<br>Suflet</h1><div class="date" id="date"></div></div>
+      <div class="streak"><div class="num" id="streak">0</div><small>zile active<br>la rând</small></div>
+    </div>
+    <div class="hero" id="hero"></div>
+    <div class="card" id="installCard" hidden>
+      <div class="row"><div><div class="tag c">Instalează</div><div style="font-weight:600" id="instTxt">Pune aplicația pe ecranul principal.</div></div><button class="btn small" id="instBtn">Instalează</button></div>
+      <p class="muted" id="instHelp" hidden></p>
+      <button class="mini" id="instNo" style="align-self:flex-start">Nu acum</button>
+    </div>
+    <section>
+      <h2>Săptămâna ta</h2>
+      <div class="week" id="week"></div>
+      <div class="legend"><span><i style="background:var(--accent)"></i>Mișcare</span><span><i style="background:var(--rest)"></i>Biblie</span><span><i style="background:var(--pray)"></i>Rugăciune</span></div>
+    </section>
+    <section style="display:flex;flex-direction:column;gap:10px">
+      <h2 style="margin:0">Pentru azi</h2>
+      <div id="today"></div>
+    </section>
+    <p class="foot">Ai o zi grea? Nu trebuie să bifezi tot. Un pas mic contează, iar când e greu, vorbește cu cineva apropiat.</p>
+    <div class="share">
+      <button class="ghost" id="copy">Copiază linkul pentru prieteni</button>
+      <span id="copied" hidden></span>
+    </div>
+  </section>
+
+  <!-- CORP -->
+  <section class="view" id="v-corp" hidden>
+    <div><h1>Mișcare</h1><p class="date">Doar greutatea corpului, fără echipament.</p></div>
+    <div class="seg" id="corpSeg"></div>
+
+    <div id="corpDaily" style="display:flex;flex-direction:column;gap:22px">
+      <section><h2>Nivel</h2><div class="levels" id="levels"></div></section>
+      <section><h2>Rutina de azi</h2>
+        <div class="plan"><ol id="plan"></ol><div class="summary"><span id="sumL"></span><span id="sumR"></span></div></div>
+      </section>
+      <div id="doneMsg" class="donebox" hidden>Gata pentru azi. Mâine primești o rutină nouă.</div>
+      <button class="btn" id="startDaily">Începe antrenamentul</button>
+      <p class="foot">Rutina se schimbă zilnic și e aceeași pentru toți prietenii. Dacă simți durere (nu doar efort), oprește-te.</p>
+    </div>
+
+    <div id="corpMil" style="display:flex;flex-direction:column;gap:22px" hidden>
+      <div class="card">
+        <p><b>Program militar în 8 săptămâni.</b> Trei antrenamente pe săptămână, în stilul pregătirii fizice din armată: <b>A</b> forță, <b>B</b> condiție, <b>C</b> rezistență. Repetările și rundele cresc în fiecare săptămână.</p>
+        <p class="muted">În zilele libere: marș alert 30–40 de minute. Odihnește-te o zi între antrenamente. Pentru slăbit contează constanța și somnul, nu doar efortul.</p>
+      </div>
+      <section><h2>Progres</h2><div class="grid8" id="milGrid"></div></section>
+      <section><h2 id="milTitle"></h2>
+        <div class="plan"><ol id="milList"></ol><div class="summary"><span id="milSum"></span><span id="milRounds"></span></div></div>
+      </section>
+      <button class="btn" id="startMil">Începe sesiunea</button>
+      <p class="foot">Nu reușești flotările clasice? Fă-le pe genunchi sau cu mâinile pe pat ori apasă „Mai ușor”. Termină repetările în ritmul tău și apasă Gata.</p>
+    </div>
+  </section>
+
+  <!-- POST -->
+  <section class="view" id="v-post" hidden>
+    <div><h1>Post</h1><p class="date">Timp luat de la mâncare sau de la ecrane și dăruit lui Dumnezeu.</p></div>
+    <div id="fastActive"></div>
+    <div class="warnbox">
+      <b>Înainte să postești</b>
+      <span>Vorbește cu medicul dacă ai diabet sau probleme cu tensiunea, dacă iei medicamente zilnic, ești însărcinată sau alăptezi, ai sub 18 ani sau ai avut probleme cu alimentația. Bea multă apă. Oprește postul dacă ai amețeli, palpitații sau te simți rău.</span>
+      <span>În zilele de post complet, nu face programul militar. Alege nivelul Ușor sau un marș.</span>
+    </div>
+    <div id="fastList" style="display:flex;flex-direction:column;gap:12px"></div>
+    <p class="foot" id="fastCount"></p>
+  </section>
+
+  <!-- BIBLIE -->
+  <section class="view" id="v-biblie" hidden>
+    <div><h1>Cuvântul</h1><p class="date">Un plan de citire, un pas pe zi.</p></div>
+    <div class="card" id="readCard"></div>
+    <details id="pickD"><summary id="pickSum">Schimbă planul</summary><div class="pickin"><div class="seg" id="planPick"></div></div></details>
+    <details id="buildD"><summary>Creează-ți propriul plan</summary><div class="pickin" id="builder"></div></details>
+    <div class="card">
+      <h3>Întrebări pentru citire</h3>
+      <ul class="q">
+        <li>Ce îmi arată textul despre Dumnezeu?</li>
+        <li>Ce îmi arată despre mine?</li>
+        <li>Ce trebuie să cred, să împlinesc sau să schimb azi?</li>
+        <li>Cum pot transforma ce am citit într-o rugăciune?</li>
+      </ul>
+    </div>
+    <details id="allDays"><summary id="allSum">Toate zilele</summary><ul class="days" id="dayList"></ul></details>
+  </section>
+
+  <!-- RUGĂCIUNE -->
+  <section class="view" id="v-rug" hidden>
+    <div><h1>Rugăciune</h1><p class="date">Hrănită din Scriptură, centrată pe închinare.</p></div>
+    <div class="seg" id="rugSeg"></div>
+    <div id="rugGuided" style="display:flex;flex-direction:column;gap:22px">
+    <div class="card">
+      <p>Rugăciunea începe cu <b>cine este Dumnezeu</b>, nu cu lista de cereri. Scriptura îți dă cuvintele, închinarea vine întâi, iar cererile izvorăsc din ce ai descoperit în text.</p>
+    </div>
+    <section><h2>Cât timp ai</h2><div class="chips" id="durPick"></div>
+      <div class="opts" id="durCustom" hidden style="margin-top:10px;align-items:center"><input class="inp" id="rMin" type="number" inputmode="numeric" min="1" max="180" style="max-width:120px" aria-label="Minute de rugăciune" placeholder="ex.: 15"><span class="muted">minute</span><button class="btn small pray" id="rSet">Setează</button></div></section>
+    <section><h2>Pasajul</h2><div class="seg" id="srcPick"></div></section>
+    <label class="toggle"><input type="checkbox" id="exTog"> Arată-mi exemple de cuvinte la fiecare pas</label>
+    <div class="card" id="prayCard"></div>
+    <button class="btn pray" id="startPray">Începe rugăciunea</button>
+    <div id="prayDone" class="donebox" hidden>Te-ai rugat azi. Poți reveni oricând.</div>
+    </div>
+    <div id="rugLearn" style="display:flex;flex-direction:column;gap:12px" hidden></div>
+  </section>
+
+  <!-- EU -->
+  <section class="view" id="v-eu" hidden>
+    <div class="top"><div><h1 id="euName">Profilul tău</h1><p class="date" id="euGoal"></p></div><button class="ghost" id="editProf">Editează</button></div>
+    <div class="card" id="recCard"></div>
+    <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
+    <section><h2 id="medalsT">Medalii</h2><div class="medals" id="medals"></div></section>
+    <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0">Progresul fizic</h2>
+      <div class="card">
+        <p class="muted">Notează-ți măsurătorile o dată la două săptămâni, în aceeași zi și la aceeași oră. Completezi doar ce vrei.</p>
+        <div class="two">
+          <input class="inp" id="p-w" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Greutate (kg)" aria-label="Greutate (kg)">
+          <input class="inp" id="p-t" type="number" inputmode="decimal" min="0" step="0.1" placeholder="Talie (cm)" aria-label="Talie (cm)">
+          <input class="inp" id="p-pu" type="number" inputmode="numeric" min="0" placeholder="Flotări (câte poți)" aria-label="Flotări (câte poți)">
+          <input class="inp" id="p-sq" type="number" inputmode="numeric" min="0" placeholder="Genuflexiuni în 1 min" aria-label="Genuflexiuni în 1 minut">
+          <input class="inp" id="p-pl" type="number" inputmode="numeric" min="0" placeholder="Plank (secunde)" aria-label="Plank (secunde)">
+        </div>
+        <div class="opts" style="align-items:center"><button class="btn small" id="saveProg">Salvează măsurătorile</button><span class="muted" id="progMsg"></span></div>
+      </div>
+      <div id="charts" style="display:flex;flex-direction:column;gap:10px"></div>
+      <details id="progHistD"><summary>Toate măsurătorile</summary><ul class="days" id="progHist"></ul></details>
+    </section>
+    <section><h2>Exerciții pe care le eviți</h2>
+      <div class="card">
+        <div class="chipset" id="avoidChips"></div>
+        <div class="two"><select class="inp" id="avSel" aria-label="Alege un exercițiu"></select><button class="ghost" id="avAdd">Adaugă</button></div>
+        <p class="muted">Nu apar în rutina zilnică, iar în programul militar primești varianta mai ușoară. Atinge un exercițiu din listă ca să-l readuci.</p>
+      </div>
+    </section>
+    <section><h2>Resetare</h2>
+      <div class="card">
+        <p class="muted">Se șterg de pe acest telefon profilul, progresul, medaliile, planurile și istoricul, iar aplicația pornește de la zero.</p>
+        <button class="ghost" id="resetAsk" style="color:#C0392B;border-color:#C0392B">Resetează aplicația</button>
+        <div id="resetConfirm" class="warnbox" hidden>
+          <b>Sigur vrei să ștergi tot?</b>
+          <span>Datele nu mai pot fi recuperate.</span>
+          <div class="opts"><button class="btn small" id="resetYes" style="background:#C0392B;color:#FFFFFF">Da, șterge tot</button><button class="ghost" id="resetNo">Renunță</button></div>
+        </div>
+      </div>
+    </section>
+  </section>
+
+  <!-- ÎNSCRIERE -->
+  <section class="view" id="v-start" hidden>
+    <div><h1 id="startTitle">Bun venit</h1><p class="date" id="startSub"></p></div>
+    <form class="form" id="onb" novalidate></form>
+  </section>
+</main>
+
+<nav class="tabs" aria-label="Secțiuni">
+  <div class="tabs-in" id="tabs"></div>
+</nav>
+
+<div class="run" id="run" hidden>
+  <div class="run-in">
+    <div class="rbar">
+      <button class="ghost" id="quit">Ieși</button>
+      <span class="num muted" id="count" style="font-variant-numeric:tabular-nums"></span>
+    </div>
+    <div class="prog"><i id="progBar"></i></div>
+    <div class="phase" id="phase"></div>
+    <div class="ringbox">
+      <svg viewBox="0 0 120 120"><circle class="track" cx="60" cy="60" r="52"/><circle class="arc" id="arc" cx="60" cy="60" r="52" stroke-dasharray="326.73" stroke-dashoffset="0"/></svg>
+      <div class="sec"><span id="secN"></span><small id="secU"></small></div>
+    </div>
+    <h3 class="exname" id="exname"></h3>
+    <p class="cue" id="cue"></p>
+    <div class="next" id="next"></div>
+    <div class="ctrl">
+      <button class="ghost" id="back">Înapoi</button>
+      <button class="btn" id="pause">Pauză</button>
+      <button class="ghost" id="skip">Sari</button>
+    </div>
+  </div>
+</div>
+
+<div class="cele" id="cele" hidden>
+  <div class="cele-card" role="dialog" aria-modal="true" aria-labelledby="celeT">
+    <svg class="check" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="28"/><path d="M20 33l8 8 16-17"/></svg>
+    <h3 id="celeT"></h3>
+    <p class="muted" id="celeS"></p>
+    <div class="pts" id="celeP"></div>
+    <div id="celeL"></div>
+    <div id="celeB" class="medals" style="width:100%"></div>
+    <button class="btn" id="celeOk">Continuă</button>
+  </div>
+</div>
+<canvas id="confetti" hidden></canvas>
+
+<script>
+const $=id=>document.getElementById(id);
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},
+             set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+const ymd=d=>d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+const today=new Date(); const TODAY=ymd(today);
+const fmt=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+":"+String(s%60).padStart(2,"0")};
+function rng(seed){let h=2166136261;for(const ch of seed){h^=ch.charCodeAt(0);h=Math.imul(h,16777619)}
+  return()=>{h|=0;h=h+0x6D2B79F5|0;let t=Math.imul(h^h>>>15,1|h);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const dayNum=Math.floor(new Date(TODAY+"T12:00:00").getTime()/864e5);
+
+/* ---------- daily log ---------- */
+let log=store.get("md_log",null);
+if(!log){log={};for(const d of store.get("md_history",[])){log[d]={c:1}}store.set("md_log",log)}
+function mark(k){log[TODAY]=log[TODAY]||{};log[TODAY][k]=1;store.set("md_log",log)}
+const has=(d,k)=>!!(log[d]&&log[d][k]);
+function streak(){
+  const active=d=>log[d]&&Object.keys(log[d]).length>0;
+  let d=new Date(today),n=0; if(!active(ymd(d)))d.setDate(d.getDate()-1);
+  while(active(ymd(d))){n++;d.setDate(d.getDate()-1)} return n;
+}
+
+/* ---------- exercises ---------- */
+const EX=[
+ {n:"Genuflexiuni",z:"Picioare",d:1,c:"Cu picioarele la lățimea umerilor, coboară ca și cum te-ai așeza pe un scaun, cu spatele drept și călcâiele pe podea."},
+ {n:"Fandări alternative",z:"Picioare",d:2,c:"Fă un pas mare înainte și coboară până când genunchiul din spate aproape atinge podeaua. Schimbă piciorul."},
+ {n:"Pod fesier",z:"Picioare",d:1,c:"Culcat pe spate, cu genunchii îndoiți, ridică bazinul, strânge fesierii sus, apoi coboară lent."},
+ {n:"Ridicări pe vârfuri",z:"Picioare",d:1,c:"Ridică-te pe vârfuri, menține o secundă, apoi coboară controlat. Te poți sprijini de perete."},
+ {n:"Scaunul la perete",z:"Picioare",d:2,c:"Cu spatele lipit de perete și coapsele paralele cu podeaua, menține poziția."},
+ {n:"Genuflexiuni cu săritură",z:"Picioare",d:3,c:"Fă o genuflexiune, apoi sari exploziv. Aterizează ușor și treci direct în următoarea."},
+ {n:"Flotări pe genunchi",z:"Brațe și piept",d:1,c:"Cu genunchii pe podea și corpul drept de la genunchi la cap, coboară pieptul spre podea."},
+ {n:"Flotări înclinate",z:"Brațe și piept",d:1,c:"Cu mâinile pe marginea patului sau a unui scaun stabil și corpul drept, coboară pieptul."},
+ {n:"Flotări",z:"Brațe și piept",d:2,c:"Cu mâinile sub umeri și corpul drept ca o scândură, coboară pieptul aproape de podea."},
+ {n:"Dips pe scaun",z:"Brațe și piept",d:2,c:"Cu mâinile pe marginea unui scaun stabil, coboară îndoind coatele spre spate."},
+ {n:"Plank cu atingerea umerilor",z:"Brațe și piept",d:2,c:"În poziție de flotare, atinge alternativ cu mâna umărul opus. Nu balansa bazinul."},
+ {n:"Flotări cu brațe apropiate",z:"Brațe și piept",d:3,c:"Cu mâinile apropiate sub piept și coatele lipite de corp, coboară controlat."},
+ {n:"Plank",z:"Abdomen",d:1,c:"Sprijinit pe antebrațe, ține corpul drept, strânge abdomenul și respiră normal."},
+ {n:"Dead bug",z:"Abdomen",d:1,c:"Culcat pe spate, cu brațele și genunchii ridicați, întinde alternativ brațul și piciorul opus, cu spatele lipit de podea."},
+ {n:"Superman",z:"Abdomen",d:1,c:"Pe burtă, ridică brațele și picioarele puțin de pe podea. Menține o secundă, apoi coboară."},
+ {n:"Abdomene bicicletă",z:"Abdomen",d:2,c:"Culcat pe spate, adu alternativ cotul spre genunchiul opus, ca și cum ai pedala."},
+ {n:"Ridicări de picioare",z:"Abdomen",d:2,c:"Culcat pe spate, cu picioarele întinse, ridică-le până la verticală, apoi coboară-le lent, fără să atingi podeaua."},
+ {n:"Plank lateral",z:"Abdomen",d:3,c:"Sprijinit pe un antebraț, ține corpul drept, pe o parte. Schimbă partea la jumătatea timpului."},
+ {n:"Pași pe loc rapizi",z:"Cardio",d:1,c:"Mergi alert pe loc, ridicând genunchii și mișcând brațele."},
+ {n:"Jumping jacks",z:"Cardio",d:1,c:"Sari deschizând picioarele și ridicând brațele deasupra capului, apoi revino la poziția inițială."},
+ {n:"Alpinist",z:"Cardio",d:2,c:"Din poziția de flotare, adu rapid genunchii spre piept, pe rând."},
+ {n:"Genunchii la piept",z:"Cardio",d:2,c:"Aleargă pe loc, ridicând genunchii cât mai sus."},
+ {n:"Patinatorul",z:"Cardio",d:2,c:"Sari lateral de pe un picior pe altul, ca un patinator."},
+ {n:"Burpees",z:"Cardio",d:3,c:"Ghemuiește-te, pune mâinile jos, du picioarele înapoi, revino și sari cu brațele sus."}
+];
+const LEVELS={usor:{name:"Ușor",work:30,rest:20,count:6,max:1},mediu:{name:"Mediu",work:40,rest:15,count:8,max:2},greu:{name:"Greu",work:45,rest:15,count:12,max:3}};
+const ZONES=["Picioare","Brațe și piept","Abdomen","Cardio"];
+let level=store.get("md_level","usor"); if(!LEVELS[level])level="usor";
+let avoid=store.get("md_avoid",[]);
+function buildPlan(lv){
+  const L=LEVELS[lv],r=rng(TODAY+lv),used=new Set(),out=[],av=new Set(avoid);
+  for(let i=0;i<L.count;i++){const z=ZONES[i%4];
+    let pool=EX.filter(e=>e.z===z&&e.d<=L.max&&!used.has(e.n)&&!av.has(e.n));
+    if(lv==="greu"){const h=pool.filter(e=>e.d>=2);if(h.length)pool=h}
+    if(!pool.length)pool=EX.filter(e=>e.z===z&&!used.has(e.n)&&!av.has(e.n));
+    if(!pool.length)pool=EX.filter(e=>!used.has(e.n)&&!av.has(e.n));
+    if(!pool.length)pool=EX.filter(e=>e.z===z);
+    const e=pool[Math.floor(r()*pool.length)];used.add(e.n);out.push(e)}
+  return out;
+}
+
+/* ---------- military program ---------- */
+const MX={
+ "Flotări":"Cu mâinile sub umeri și corpul drept, coboară pieptul aproape de podea, apoi împinge până la brațe întinse.",
+ "Genuflexiuni":"Coboară până când coapsele sunt paralele cu podeaua, cu spatele drept și călcâiele pe podea.",
+ "Abdomene":"Culcat pe spate, cu genunchii îndoiți și mâinile la piept, ridică trunchiul până la genunchi, apoi coboară controlat.",
+ "Fandări":"Fă un pas mare înainte și coboară cu genunchiul din spate aproape de podea. Numără pe fiecare picior.",
+ "Superman":"Pe burtă, ridică brațele și picioarele, menține o secundă, apoi coboară.",
+ "Jumping jacks":"Sari deschizând picioarele și ridicând brațele, apoi revino. Păstrează un ritm constant.",
+ "Alpinist":"Din poziția de flotare, adu genunchii spre piept, pe rând. Fiecare genunchi = 1.",
+ "Burpee militar":"Ghemuiește-te, du picioarele înapoi, fă o flotare, adu picioarele înapoi la mâini și ridică-te.",
+ "Forfecuțe":"Culcat pe spate, cu picioarele întinse și puțin ridicate, mișcă-le alternativ sus-jos. Fiecare picior = 1.",
+ "Genunchii la piept":"Aleargă pe loc cu genunchii sus. Fiecare genunchi = 1.",
+ "Plank":"Sprijinit pe antebrațe, ține corpul drept și abdomenul strâns.",
+ "Abdomene bicicletă":"Adu alternativ cotul spre genunchiul opus. Fiecare parte = 1."
+};
+const MIL=[
+ {k:"A",name:"Forță",ex:[["Flotări",10],["Genuflexiuni",20],["Abdomene",15],["Fandări",10,"/picior"],["Superman",12]]},
+ {k:"B",name:"Condiție",ex:[["Jumping jacks",30],["Alpinist",30],["Burpee militar",6],["Forfecuțe",30],["Genunchii la piept",30]]},
+ {k:"C",name:"Rezistență",ex:[["Flotări",8],["Burpee militar",5],["Genuflexiuni",25],["Plank",30,"s",1],["Abdomene bicicletă",20]]}
+];
+const milRounds=w=>w<=2?2:w<=5?3:4;
+const milReps=(base,w)=>Math.round(base*(1+0.12*(w-1)));
+let mil=store.get("md_mil",{done:{}});
+const SUB={"Flotări":"Flotări pe genunchi","Burpee militar":"Burpee fără flotare","Abdomene":"Abdomene scurte","Fandări":"Fandări cu sprijin","Alpinist":"Alpinist lent","Forfecuțe":"Forfecuțe cu genunchii îndoiți","Jumping jacks":"Jumping jacks fără săritură","Genunchii la piept":"Pași pe loc rapizi","Genuflexiuni":"Genuflexiuni pe scaun","Plank":"Plank pe genunchi","Superman":"Superman alternativ","Abdomene bicicletă":"Dead bug"};
+Object.assign(MX,{
+ "Burpee fără flotare":"Ghemuiește-te, pune mâinile jos, du picioarele înapoi, revino și ridică-te. Fără flotare și fără săritură.",
+ "Abdomene scurte":"Culcat pe spate, cu genunchii îndoiți, ridică doar umerii de pe podea, cu privirea în sus, apoi coboară lent.",
+ "Fandări cu sprijin":"Ține-te de un scaun și coboară puțin în fandare, fără să forțezi genunchiul.",
+ "Alpinist lent":"Cu mâinile pe podea sau pe pat, adu încet genunchii la piept, pe rând.",
+ "Forfecuțe cu genunchii îndoiți":"Culcat pe spate, cu genunchii îndoiți și ridicați, atinge alternativ podeaua cu vârful piciorului.",
+ "Jumping jacks fără săritură":"Fă pași laterali alternativi și ridică brațele deasupra capului.",
+ "Genuflexiuni pe scaun":"Așază-te ușor pe un scaun și ridică-te fără ajutorul mâinilor.",
+ "Plank pe genunchi":"Sprijinit pe antebrațe și genunchi, ține corpul drept și abdomenul strâns.",
+ "Superman alternativ":"Pe burtă, ridică brațul drept și piciorul stâng, apoi invers."});
+const eff=n=>avoid.includes(n)&&SUB[n]?SUB[n]:n;
+const cueOf=n=>MX[n]||(EX.find(e=>e.n===n)||{}).c||"";
+function milNext(){for(let w=mil.start||1;w<=8;w++)for(let s=0;s<3;s++)if(!mil.done[w+"-"+s])return[w,s];return null}
+let milSel=milNext()||[8,2];
+let corpMode=store.get("md_corpmode","daily");
+
+/* ---------- bible plans ---------- */
+const OT=[["Geneza",50],["Exodul",40],["Leviticul",27],["Numeri",36],["Deuteronomul",34],["Iosua",24],["Judecători",21],["Rut",4],["1 Samuel",31],["2 Samuel",24],["1 Împărați",22],["2 Împărați",25],["1 Cronici",29],["2 Cronici",36],["Ezra",10],["Neemia",13],["Estera",10],["Iov",42],["Psalmii",150],["Proverbe",31],["Eclesiastul",12],["Cântarea cântărilor",8],["Isaia",66],["Ieremia",52],["Plângerile lui Ieremia",5],["Ezechiel",48],["Daniel",12],["Osea",14],["Ioel",3],["Amos",9],["Obadia",1],["Iona",4],["Mica",7],["Naum",3],["Habacuc",3],["Țefania",3],["Hagai",2],["Zaharia",14],["Maleahi",4]];
+const NT=[["Matei",28],["Marcu",16],["Luca",24],["Ioan",21],["Faptele Apostolilor",28],["Romani",16],["1 Corinteni",16],["2 Corinteni",13],["Galateni",6],["Efeseni",6],["Filipeni",4],["Coloseni",4],["1 Tesaloniceni",5],["2 Tesaloniceni",3],["1 Timotei",6],["2 Timotei",4],["Tit",3],["Filimon",1],["Evrei",13],["Iacov",5],["1 Petru",5],["2 Petru",3],["1 Ioan",5],["2 Ioan",1],["3 Ioan",1],["Iuda",1],["Apocalipsa",22]];
+/* numărul de versete pe capitol, în ordinea cărților de mai sus */
+const VC="31,25,24,26,32,22,24,22,29,32,32,20,18,24,21,16,27,33,38,18,34,24,20,67,34,35,46,22,35,43,55,32,20,31,29,43,36,30,23,23,57,38,34,34,28,34,31,22,33,26|22,25,22,31,23,30,25,32,35,29,10,51,22,31,27,36,16,27,25,26,36,31,33,18,40,37,21,43,46,38,18,35,23,35,35,38,29,31,43,38|17,16,17,35,19,30,38,36,24,20,47,8,59,57,33,34,16,30,37,27,24,33,44,23,55,46,34|54,34,51,49,31,27,89,26,23,36,35,16,33,45,41,50,13,32,22,29,35,41,30,25,18,65,23,31,40,16,54,42,56,29,34,13|46,37,29,49,33,25,26,20,29,22,32,32,18,29,23,22,20,22,21,20,23,30,25,22,19,19,26,68,29,20,30,52,29,12|18,24,17,24,15,27,26,35,27,43,23,24,33,15,63,10,18,28,51,9,45,34,16,33|36,23,31,24,31,40,25,35,57,18,40,15,25,20,20,31,13,31,30,48,25|22,23,18,22|28,36,21,22,12,21,17,22,27,27,15,25,23,52,35,23,58,30,24,42,15,23,29,22,44,25,12,25,11,31,13|27,32,39,12,25,23,29,18,13,19,27,31,39,33,37,23,29,33,43,26,22,51,39,25|53,46,28,34,18,38,51,66,28,29,43,33,34,31,34,34,24,46,21,43,29,53|18,25,27,44,27,33,20,29,37,36,21,21,25,29,38,20,41,37,37,21,26,20,37,20,30|54,55,24,43,26,81,40,40,44,14,47,40,14,17,29,43,27,17,19,8,30,19,32,31,31,32,34,21,30|17,18,17,22,14,42,22,18,31,19,23,16,22,15,19,14,19,34,11,37,20,12,21,27,28,23,9,27,36,27,21,33,25,33,27,23|11,70,13,24,17,22,28,36,15,44|11,20,32,23,19,19,73,18,38,39,36,47,31|22,23,15,17,14,14,10,17,32,3|22,13,26,21,27,30,21,22,35,22,20,25,28,22,35,22,16,21,29,29,34,30,17,25,6,14,23,28,25,31,40,22,33,37,16,33,24,41,30,24,34,17|6,12,8,8,12,10,17,9,20,18,7,8,6,7,5,11,15,50,14,9,13,31,6,10,22,12,14,9,11,12,24,11,22,22,28,12,40,22,13,17,13,11,5,26,17,11,9,14,20,23,19,9,6,7,23,13,11,11,17,12,8,12,11,10,13,20,7,35,36,5,24,20,28,23,10,12,20,72,13,19,16,8,18,12,13,17,7,18,52,17,16,15,5,23,11,13,12,9,9,5,8,28,22,35,45,48,43,13,31,7,10,10,9,8,18,19,2,29,176,7,8,9,4,8,5,6,5,6,8,8,3,18,3,3,21,26,9,8,24,13,10,7,12,15,21,10,20,14,9,6|33,22,35,27,23,35,27,36,18,32,31,28,25,35,33,33,28,24,29,30,31,29,35,34,28,28,27,28,27,33,31|18,26,22,16,20,12,29,17,18,20,10,14|17,17,11,16,16,13,13,14|31,22,26,6,30,13,25,22,21,34,16,6,22,32,9,14,14,7,25,6,17,25,18,23,12,21,13,29,24,33,9,20,24,17,10,22,38,22,8,31,29,25,28,28,25,13,15,22,26,11,23,15,12,17,13,12,21,14,21,22,11,12,19,12,25,24|19,37,25,31,31,30,34,22,26,25,23,17,27,22,21,21,27,23,15,18,14,30,40,10,38,24,22,17,32,24,40,44,26,22,19,32,21,28,18,16,18,22,13,30,5,28,7,47,39,46,64,34|22,22,66,22,22|28,10,27,17,17,14,27,18,11,22,25,28,23,23,8,63,24,32,14,49,32,31,49,27,17,21,36,26,21,26,18,32,33,31,15,38,28,23,29,49,26,20,27,31,25,24,23,35|21,49,30,37,31,28,28,27,27,21,45,13|11,23,5,19,15,11,16,14,17,15,12,14,16,9|20,32,21|15,16,15,13,27,14,17,14,15|21|17,10,10,11|16,13,12,13,15,16,20|15,13,19|17,20,19|18,15,20|15,23|21,13,10,14,11,15,14,23,17,12,17,14,9,21|14,17,18,6|25,23,17,25,48,34,29,34,38,42,30,50,58,36,39,28,27,35,30,34,46,46,39,51,46,75,66,20|45,28,35,41,43,56,37,38,50,52,33,44,37,72,47,20|80,52,38,44,39,49,50,56,62,42,54,59,35,35,32,31,37,43,48,47,38,71,56,53|51,25,36,54,47,71,53,59,41,42,57,50,38,31,27,33,26,40,42,31,25|26,47,26,37,42,15,60,40,43,48,30,25,52,28,41,40,34,28,41,38,40,30,35,27,27,32,44,31|32,29,31,25,21,23,25,39,33,21,36,21,14,23,33,27|31,16,23,21,13,20,40,13,27,33,34,31,13,40,58,24|24,17,18,18,21,18,16,24,15,18,33,21,14|24,21,29,31,26,18|23,22,21,32,33,24|30,30,21,23|29,23,25,18|10,20,13,18,28|12,17,18|20,15,16,16,25,21|18,26,17,22|16,15,15|25|14,18,19,16,14,20,28,13,28,39,40,29,25|27,26,18,17,20|25,25,22,19,14|21,22,18|10,29,24,21,21|13|15|25|20,29,22,11,14,17,17,13,21,11,19,17,18,20,8,21,18,24,21,15,27,21".split("|").map(x=>x.split(",").map(Number));
+const VCM={};[...OT,...NT].forEach((b,i)=>VCM[b[0]]=VC[i]);
+const versesOf=list=>list.reduce((s,[b,n])=>s+(VCM[b]||[]).slice(0,n).reduce((a,v)=>a+v,0),0);
+const AVGV=26.2;
+const planDays=(list,cpd)=>{const N=list.reduce((s,b)=>s+b[1],0);return N?Math.max(1,Math.min(N,Math.round(versesOf(list)/(cpd*AVGV)))):0};
+/* împarte capitolele pe zile după numărul de versete, așa că un capitol scurt se citește împreună cu vecinul lui */
+function splitPlan(books,days){
+  const ch=[];books.forEach(([b,n])=>{for(let i=1;i<=n;i++)ch.push([b,i,(VCM[b]&&VCM[b][i-1])||AVGV])});
+  const n=ch.length;days=Math.max(1,Math.min(days,n));
+  const cum=[0];ch.forEach(c=>cum.push(cum[cum.length-1]+c[2]));const V=cum[n];
+  const out=[];let st=0;
+  for(let d=0;d<days;d++){let en;
+    if(d===days-1)en=n;else{const tg=cum[st]+(V-cum[st])/(days-d),mx=n-(days-d-1);en=st+1;while(en<mx&&cum[en]<tg)en++;
+      if(en-1>st&&Math.abs(cum[en-1]-tg)<Math.abs(cum[en]-tg))en--}
+    const part=ch.slice(st,en);st=en;
+    const groups=[];part.forEach(([b,c])=>{const g=groups[groups.length-1];if(g&&g.b===b&&g.e===c-1)g.e=c;else groups.push({b,s:c,e:c})});
+    out.push(groups.map(g=>g.b+" "+(g.s===g.e?g.s:g.s+"–"+g.e)).join("; "));
+  }
+  return out;
+}
+const PLANS={
+ ioan21:{n:"Ioan în 21 de zile",days:Array.from({length:21},(_,i)=>"Ioan "+(i+1))},
+ ps31:{n:"Psalmii și Proverbe în 30 de zile",days:Array.from({length:30},(_,i)=>{const d=i+1,p=[];for(let k=d;k<=150;k+=30)p.push(k);const x=Math.floor(i*31/30)+1,y=Math.floor((i+1)*31/30);return"Psalmii "+p.join(", ")+"; Proverbe "+(x===y?x:x+"–"+y)})},
+ ev30:{n:"Evangheliile în 30 de zile",days:splitPlan(NT.slice(0,4),30)},
+ nt90:{n:"Noul Testament în 90 de zile",days:splitPlan(NT,90)},
+ ps30:{n:"Psalmii în 30 de zile",days:splitPlan([["Psalmii",150]],30)},
+ prov31:{n:"Proverbe în 30 de zile",days:splitPlan([["Proverbe",31]],30)},
+ fapte28:{n:"Faptele Apostolilor în 28 de zile",days:splitPlan([["Faptele Apostolilor",28]],28)},
+ pavel30:{n:"Epistolele lui Pavel în 30 de zile",days:splitPlan(NT.slice(5,18),30)},
+ geneza50:{n:"Geneza în 50 de zile",days:splitPlan([["Geneza",50]],50)},
+ vt365:{n:"Vechiul Testament într-un an",days:splitPlan(OT,365)},
+ bib365:{n:"Biblia într-un an",days:splitPlan([...OT,...NT],365)}
+};
+const BIB=[...OT,...NT];
+let custom=store.get("md_custom",{});
+function loadCustom(){
+  for(const k in PLANS)if(PLANS[k].custom)delete PLANS[k];
+  for(const [id,c] of Object.entries(custom)){c.books=c.books.map(b=>b==="Prover"+"bele"?"Proverbe":b);const bk=BIB.filter(b=>c.books.includes(b[0])),N=bk.reduce((s,b)=>s+b[1],0);
+    if(bk.length)PLANS[id]={n:c.n,days:splitPlan(bk,planDays(bk,c.cpd)),custom:true}}
+}
+loadCustom();
+let bible=store.get("md_bible",{plan:"ioan21",done:{}});
+if(!PLANS[bible.plan])bible.plan="ioan21";
+const bDone=()=>bible.done[bible.plan]||(bible.done[bible.plan]={});
+const bNext=()=>{const d=bDone(),days=PLANS[bible.plan].days;for(let i=0;i<days.length;i++)if(!d[i])return i;return -1};
+
+/* ---------- prayer ---------- */
+const WORSHIP=["Psalmul 8","Psalmul 19","Psalmul 23","Psalmul 27","Psalmul 33","Psalmul 34","Psalmul 46","Psalmul 63","Psalmul 84","Psalmul 90","Psalmul 91","Psalmul 95","Psalmul 96","Psalmul 100","Psalmul 103","Psalmul 104","Psalmul 111","Psalmul 113","Psalmul 121","Psalmul 136","Psalmul 139","Psalmul 145","Psalmul 146","Psalmul 147","Psalmul 148","Isaia 40","Isaia 6:1-8","Apocalipsa 4","Apocalipsa 5","Coloseni 1:15-20","Efeseni 1:3-14","Ioan 1:1-18"];
+const FOCUS=["biserica ta și cei care o slujesc","familia ta","prietenii și cei care încă nu-L cunosc pe Isus","colegii, elevii și locul tău de muncă","orașul, țara și cei care conduc","cei bolnavi, singuri sau în suferință","lucrarea lui Dumnezeu în lume și ziua de mâine"];
+let pray=store.get("md_pray",{min:10,src:"ps"});if(pray.ex===undefined)pray.ex=true;
+const psalmToday=WORSHIP[((dayNum%WORSHIP.length)+WORSHIP.length)%WORSHIP.length];
+function prayPassage(){
+  if(pray.src==="plan"){const i=bNext();const days=PLANS[bible.plan].days;return days[i<0?days.length-1:i].split(";")[0]}
+  return psalmToday;
+}
+function prayerSteps(){
+  const P=prayPassage(),F=FOCUS[today.getDay()],m=pray.min;
+  const S=[
+   ["Liniștire",1,"Oprește-te. Respiră încet. Lasă deoparte grijile. Recunoaște că ești înaintea lui Dumnezeu. (Psalmul 46:10)"],
+   ["Închinare din Scriptură",3,`Citește încet ${P}. Pentru fiecare lucru pe care textul îl spune despre Dumnezeu, laudă-L cu cuvintele tale. Nu cere încă nimic, doar privește la El.`],
+   ["Ascultare și răspuns",2,"Întoarce-te la versetul care te-a atins. Ce îți arată despre tine? Răspunde-I sincer, cu mulțumire, mărturisire sau ascultare."],
+   ["Predare",1.5,"Spune-I: „Facă-se voia Ta” pentru ziua de azi. Predă-I planurile, temerile și oamenii pe care îi porți în inimă."],
+   ["Mijlocire",2,`Roagă-te pentru alții folosind adevărurile din text. Azi: ${F}.`],
+   ["Încheiere în închinare",.5,"Încheie cum ai început. Mulțumește-I pentru cine este El și pentru că te ascultă."]
+  ];
+  return S.map(([t,w,c],i)=>({kind:"time",tone:"pray",phase:"Rugăciune · pasul "+(i+1)+" din "+S.length,title:t,cue:c+(pray.ex?"\n\nExemplu: „"+EXS[i]+"”":""),dur:Math.round(w*m*6),
+    next:S[i+1]?"Urmează: <b>"+S[i+1][0]+"</b>":""}));
+}
+
+/* ---------- fasting ---------- */
+const FASTS=[
+ {id:"masa",n:"Postul unei mese",d:"Sari peste o masă și folosește timpul acela pentru rugăciune și citire. Un început bun.",ref:"Matei 6:16-18",opts:[]},
+ {id:"zi",n:"Post de zi",d:"De dimineață până seara doar apă sau ceai neîndulcit. Rupi postul la cină, cu o masă ușoară.",ref:"Judecători 20:26",opts:[[12,"12 ore"]]},
+ {id:"daniel",n:"Postul lui Daniel",d:"Legume, fructe, cereale integrale, leguminoase și apă. Fără carne, dulciuri, prăjeli și băuturi îndulcite.",ref:"Daniel 1:12; 10:2-3",opts:[[24,"1 zi"],[72,"3 zile"],[168,"7 zile"],[504,"21 de zile"]]},
+ {id:"apa",n:"Post cu apă, 24 de ore",d:"De la cină la cină, doar apă. Numai dacă ești sănătos și ai mai postit înainte.",ref:"Ezra 8:21-23",opts:[[24,"24 ore"]]},
+ {id:"ecrane",n:"Post de la ecrane",d:"Fără rețele sociale, seriale și jocuri. Timpul câștigat îl dai lui Dumnezeu și oamenilor din jur. Bun pentru minte și inimă.",ref:"Psalmul 46:10",opts:[[24,"1 zi"],[72,"3 zile"],[168,"7 zile"]]}
+];
+let fast=store.get("md_fast",{active:null,count:0});
+
+/* ---------- views ---------- */
+const TABS=[
+ ["azi","Azi",'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>'],
+ ["corp","Mișcare",'<circle cx="12" cy="5" r="2"/><path d="M6 21l3-7 3 2v5M12 16l3-4 3 2M9 14l1-5h4l2 3"/>'],
+ ["post","Post",'<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>'],
+ ["biblie","Biblie",'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M12 7v5M10 9h4"/>'],
+ ["rug","Rugăciune",'<path d="M12 3v7M9 6h6"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/>'],
+ ["eu","Eu",'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>']
+];
+let tab="azi";{const h=location.hash.slice(1);if(TABS.some(t=>t[0]===h))tab=h}
+function showTab(t){tab=t;
+  TABS.forEach(([k])=>{$("v-"+k).hidden=k!==t});$("v-start").hidden=t!=="start";document.body.classList.toggle("onb",t==="start");
+  document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-current",b.dataset.t===t?"page":"false"));
+  try{history.replaceState(null,"","#"+t)}catch(e){}
+  window.scrollTo(0,0);render();
+}
+$("tabs").innerHTML=TABS.map(([k,l,ic])=>`<button class="tab" data-t="${k}"><svg viewBox="0 0 24 24">${ic}</svg>${l}</button>`).join("");
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>showTab(b.dataset.t));
+window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h!==tab&&TABS.some(t=>t[0]===h))showTab(h)});
+
+function render(){
+  ({azi:renderAzi,corp:renderCorp,post:renderPost,biblie:renderBiblie,rug:renderRug,eu:renderEu,start:renderStart})[tab]();
+}
+
+function renderAzi(){
+  renderHero();
+  $("date").textContent=today.toLocaleDateString("ro-RO",{weekday:"long",day:"numeric",month:"long"});
+  $("streak").textContent=streak();
+  const labels=["D","L","M","M","J","V","S"],mon=new Date(today);mon.setDate(today.getDate()-((today.getDay()+6)%7));
+  let h="";for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);const k=ymd(d);
+    h+=`<div class="day ${k===TODAY?"today":""}">${labels[d.getDay()]}<div class="dots"><i class="${has(k,"c")?"c":""}"></i><i class="${has(k,"b")?"b":""}"></i><i class="${has(k,"r")?"r":""}"></i></div></div>`}
+  $("week").innerHTML=h;
+  const bi=bNext(),bd=PLANS[bible.plan].days;
+  const mn=milNext();
+  const cards=[
+   {t:"c",tag:"Mișcare",title:corpMode==="mil"&&mn?`Program militar · săpt. ${mn[0]} · ${MIL[mn[1]].k}`:`Rutina zilnică · ${LEVELS[level].name}`,done:has(TODAY,"c"),go:"corp"},
+   {t:"b",tag:"Biblie",title:bi<0?"Plan terminat. Alege altul.":`Ziua ${bi+1}: ${bd[bi]}`,done:has(TODAY,"b"),go:"biblie"},
+   {t:"r",tag:"Rugăciune",title:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
+   {t:"p",tag:"Post",title:fast.active?`În desfășurare: ${FASTS.find(f=>f.id===fast.active.id).n}`:"Opțional. Alege când ești pregătit.",done:false,go:"post"}
+  ];
+  $("today").style.cssText="display:flex;flex-direction:column;gap:10px";
+  $("today").innerHTML=cards.map(c=>`<div class="card"><div class="row"><div><div class="tag ${c.t}">${c.tag}</div><div style="font-weight:600">${c.title}</div></div>
+    ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest)"':c.t==="p"?'style="background:var(--muted)"':""}>Deschide</button>`}</div></div>`).join("");
+  $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
+  if(!prof){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag c">Profil</div><div style="font-weight:600">Răspunde la câteva întrebări ca să-ți potrivim programul.</div></div><button class="btn small" id="mkProf">Începe</button></div></div>`);
+    $("mkProf").onclick=()=>openProfile(false)}
+}
+
+function renderCorp(){
+  $("corpSeg").innerHTML=[["daily","Rutina zilnică"],["mil","Program militar"]].map(([k,l])=>`<button class="lvl" data-m="${k}" aria-pressed="${corpMode===k}"><b>${l}</b><span>${k==="daily"?"5–12 min":"8 săptămâni"}</span></button>`).join("");
+  $("corpSeg").querySelectorAll("button").forEach(b=>b.onclick=()=>{corpMode=b.dataset.m;store.set("md_corpmode",corpMode);renderCorp()});
+  $("corpDaily").hidden=corpMode!=="daily";$("corpMil").hidden=corpMode!=="mil";
+  if(corpMode==="daily"){
+    const lv=$("levels");lv.innerHTML="";
+    for(const [k,L] of Object.entries(LEVELS)){const tot=L.count*L.work+(L.count-1)*L.rest;
+      const b=document.createElement("button");b.className="lvl";b.setAttribute("aria-pressed",k===level);
+      b.innerHTML=`<b>${L.name}</b><span>~${Math.round(tot/60)} min</span>`;
+      b.onclick=()=>{level=k;store.set("md_level",k);renderCorp()};lv.appendChild(b)}
+    const L=LEVELS[level],plan=buildPlan(level);
+    $("plan").innerHTML=plan.map((e,i)=>`<li class="has-act"><span class="i">${String(i+1).padStart(2,"0")}</span><span class="n">${e.n}<span class="z">${e.z}</span></span><span class="t">${L.work} s</span><button class="mini" data-av="${e.n}" aria-label="Evit ${e.n}">Evit</button></li>`).join("");
+    $("plan").querySelectorAll("[data-av]").forEach(b=>b.onclick=()=>{if(!avoid.includes(b.dataset.av))avoid.push(b.dataset.av);store.set("md_avoid",avoid);renderCorp()});
+    $("sumL").textContent=`${L.count} exerciții · ${L.work} s lucru / ${L.rest} s pauză`;
+    $("sumR").textContent=fmt(L.count*L.work+(L.count-1)*L.rest)+" min";
+    $("doneMsg").hidden=!has(TODAY,"c");
+    $("startDaily").textContent=has(TODAY,"c")?"Mai fă o dată":"Începe antrenamentul";
+  }else{
+    let g='<span></span>'+MIL.map(s=>`<span class="h">${s.k}</span>`).join("");
+    for(let w=1;w<=8;w++){g+=`<span class="h" style="text-align:left">Săpt. ${w}</span>`;
+      for(let s=0;s<3;s++){const k=w+"-"+s;const sel=milSel[0]===w&&milSel[1]===s;
+        g+=`<button class="cell ${mil.done[k]?"done":""} ${sel?"sel":""} ${w<(mil.start||1)&&!mil.done[k]?"skip":""}" data-w="${w}" data-s="${s}" aria-label="Săptămâna ${w}, sesiunea ${MIL[s].k}">${mil.done[k]?"✓":MIL[s].k}</button>`}}
+    $("milGrid").innerHTML=g;
+    $("milGrid").querySelectorAll(".cell").forEach(b=>b.onclick=()=>{milSel=[+b.dataset.w,+b.dataset.s];renderCorp()});
+    const [w,s]=milSel,S=MIL[s];
+    $("milTitle").textContent=`Săptămâna ${w} · ${S.k} · ${S.name}`;
+    $("milList").innerHTML=S.ex.map(([n,b,u],i)=>{const e=eff(n);return`<li class="has-act"><span class="i">${String(i+1).padStart(2,"0")}</span><span class="n">${e}${e!==n?'<span class="sub">variantă mai ușoară</span>':""}</span><span class="t">${milReps(b,w)}${u?" "+u.replace("/"," / "):" rep."}</span>${SUB[n]?`<button class="mini" data-tg="${n}">${e!==n?"Normal":"Mai ușor"}</button>`:"<span></span>"}</li>`}).join("");
+    $("milList").querySelectorAll("[data-tg]").forEach(b=>b.onclick=()=>{const n=b.dataset.tg;avoid=avoid.includes(n)?avoid.filter(x=>x!==n):[...avoid,n];store.set("md_avoid",avoid);renderCorp()});
+    $("milSum").textContent="Încălzire 2 min · întinderi la final";
+    $("milRounds").textContent=milRounds(w)+" runde";
+    const done=!!mil.done[w+"-"+s];
+    $("startMil").textContent=done?"Repetă sesiunea":"Începe sesiunea";
+  }
+}
+
+function renderPost(){
+  const A=fast.active;
+  if(A){const f=FASTS.find(x=>x.id===A.id),el=(Date.now()-A.start)/36e5,pct=Math.min(100,el/A.hours*100);
+    const end=new Date(A.start+A.hours*36e5);
+    $("fastActive").innerHTML=`<div class="card"><div class="tag b">Post în desfășurare</div><h3>${f.n}</h3>
+      <div class="big">${Math.floor(el)}h ${String(Math.floor(el%1*60)).padStart(2,"0")}m</div>
+      <div class="bar2"><i style="width:${pct}%"></i></div>
+      <p class="muted">Ținta: ${A.label}, până ${end.toLocaleString("ro-RO",{weekday:"long",hour:"2-digit",minute:"2-digit"})}. Când îți e foame, roagă-te sau citește ${f.ref}.</p>
+      <div class="opts"><button class="btn small" id="endFast" style="background:var(--rest)">Încheie postul</button><button class="ghost" id="dropFast">Anulează</button></div></div>`;
+    $("endFast").onclick=()=>{const p0=points();fast.count++;fast.active=null;store.set("md_fast",fast);renderPost();celebrate("Post încheiat","Rupe postul încet, cu o masă ușoară.",p0)};
+    $("dropFast").onclick=()=>{fast.active=null;store.set("md_fast",fast);renderPost()};
+  }else $("fastActive").innerHTML="";
+  const blocked=id=>!!(prof&&prof.fastRestrict&&(id==="zi"||id==="apa"));
+  $("fastList").innerHTML=(prof&&prof.fastRestrict?'<div class="donebox" style="text-align:left;font-weight:500">Din profilul tău: alege postul unei mese, Postul lui Daniel sau postul de la ecrane. Pentru postul complet, vorbește întâi cu medicul.</div>':"")+FASTS.map(f=>`<div class="card"><div class="row"><h3>${f.n}</h3><span class="tag p">${f.ref}</span></div>
+    <p class="muted" style="color:var(--ink)">${f.d}</p>
+    <div class="opts">${f.opts.length?f.opts.map(([h,l])=>`<button class="ghost" data-f="${f.id}" data-h="${h}" data-l="${l}" ${A||blocked(f.id)?"disabled":""}>Începe · ${l}</button>`).join(""):`<button class="ghost" data-f="${f.id}" data-h="0">Am postit o masă azi</button>`}</div></div>`).join("");
+  $("fastList").querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{
+    const h=+b.dataset.h;
+    if(!h){fast.count++;store.set("md_fast",fast);b.textContent="Notat ✓";b.disabled=true;renderFastCount();return}
+    fast.active={id:b.dataset.f,start:Date.now(),hours:h,label:b.dataset.l};store.set("md_fast",fast);renderPost();window.scrollTo(0,0)});
+  renderFastCount();
+}
+function renderFastCount(){$("fastCount").textContent=fast.count?`Posturi încheiate: ${fast.count}.`:"Postul nu e o dietă. Scopul e apropierea de Dumnezeu."}
+
+function renderBiblie(){
+  $("planPick").innerHTML=Object.entries(PLANS).map(([k,p])=>{const d=bible.done[k]||{},n=Object.keys(d).length;
+    return`<button class="lvl" data-p="${k}" aria-pressed="${bible.plan===k}"><b style="font-size:.9rem">${esc(p.n)}</b><span>${p.custom?"personal · ":""}${n}/${p.days.length} zile</span></button>`}).join("");
+  $("planPick").querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{bible.plan=b.dataset.p;store.set("md_bible",bible);$("pickD").open=false;renderBiblie();window.scrollTo(0,0)});
+  $("pickSum").textContent=`Schimbă planul (${Object.keys(PLANS).length} planuri)`;
+  renderBuilder();
+  const P=PLANS[bible.plan],i=bNext(),D=bDone();
+  if(i<0){$("readCard").innerHTML=`<div class="tag b">Plan terminat</div><h3>Ai citit tot planul „${P.n}”.</h3><button class="ghost" id="resetPlan">Ia-o de la capăt</button>`;
+    $("resetPlan").onclick=()=>{bible.done[bible.plan]={};store.set("md_bible",bible);renderBiblie()};}
+  else{
+    const readToday=Object.values(D).includes(TODAY);
+    $("readCard").innerHTML=`<div class="tag b">${esc(P.n)} · ziua ${i+1} din ${P.days.length}</div><div class="bar2"><i style="width:${(Object.keys(D).length/P.days.length*100).toFixed(1)}%"></i></div><div class="reading">${P.days[i]}</div>
+      ${readToday?'<p class="muted">Ai citit deja azi. Poți merge mai departe, dacă vrei.</p>':""}
+      <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest)">Am citit</button><button class="ghost" id="readPray">Roagă-te cu acest text</button></div>`;
+    $("readOk").onclick=()=>{const p0=points();D[i]=TODAY;store.set("md_bible",bible);mark("b");renderBiblie();celebrate("Citire bifată",`Ziua ${i+1}: ${P.days[i]}`,p0)};
+    $("readPray").onclick=()=>{pray.src="plan";store.set("md_pray",pray);showTab("rug")};
+  }
+  $("allSum").textContent=`Toate zilele (${Object.keys(D).length}/${P.days.length})`;
+  $("dayList").innerHTML=P.days.map((t,k)=>`<li><input type="checkbox" id="bd-${bible.plan}-${k}" data-k="${k}" ${D[k]?"checked":""}><label for="bd-${bible.plan}-${k}"><b>${k+1}</b>${t}</label></li>`).join("");
+  $("dayList").querySelectorAll("input").forEach(c=>c.onchange=()=>{const k=c.dataset.k;
+    if(c.checked){D[k]=TODAY;mark("b")}else delete D[k];store.set("md_bible",bible);
+    const j=bNext();$("allSum").textContent=`Toate zilele (${Object.keys(D).length}/${P.days.length})`;
+    renderReadOnly(j)});
+}
+let bsel={name:"",books:[],cpd:2};
+const QUICK=[["Tot VT",OT],["Tot NT",NT],["Pentateuhul",OT.slice(0,5)],["Cărțile poetice",OT.slice(17,22)],["Profeții mari",OT.slice(22,27)],["Profeții mici",OT.slice(27)],["Evangheliile",NT.slice(0,4)],["Epistolele",NT.slice(5,26)]];
+function renderBuilder(){
+  const sel=new Set(bsel.books),bk=BIB.filter(b=>sel.has(b[0])),N=bk.reduce((s,b)=>s+b[1],0),days=planDays(bk,bsel.cpd);
+  const chips=list=>list.map(([b,c])=>`<button type="button" class="chip sm" data-b="${b}" aria-pressed="${sel.has(b)}" title="${c} capitole">${b}</button>`).join("");
+  const mine=Object.entries(custom);
+  $("builder").innerHTML=`
+    <div class="field"><label class="flabel" for="bName">Numele planului</label><input class="inp" id="bName" maxlength="40" placeholder="ex.: Profeții mici în 2 săptămâni" value="${esc(bsel.name)}"></div>
+    <div class="field"><span class="flabel">Selecție rapidă</span><div class="chipset">${QUICK.map(([n,l],i)=>`<button type="button" class="chip sm q" data-qk="${i}" aria-pressed="${l.every(b=>sel.has(b[0]))}">${n}</button>`).join("")}<button type="button" class="chip sm q" data-clr="1">Golește</button></div></div>
+    <div class="field"><span class="flabel">Vechiul Testament</span><div class="chipset">${chips(OT)}</div></div>
+    <div class="field"><span class="flabel">Noul Testament</span><div class="chipset">${chips(NT)}</div></div>
+    <div class="field"><span class="flabel">Capitole pe zi, în medie</span><div class="chipset">${[1,2,3,4,5].map(n=>`<button type="button" class="chip" data-cpd="${n}" aria-pressed="${bsel.cpd===n}">${n}</button>`).join("")}</div></div>
+    <div class="donebox">${bk.length?`${bk.length} ${bk.length===1?"carte":"cărți"} · ${N} capitole · ${days} ${days===1?"zi":"zile"}<br><span class="muted" style="font-weight:400">Capitolele scurte se citesc împreună, ca zilele să fie cam egale.</span>`:"Alege cel puțin o carte."}</div>
+    <button class="btn" id="bMake" style="background:var(--rest)" ${bk.length?"":"disabled"}>Creează planul</button>
+    ${mine.length?`<div><span class="flabel">Planurile tale</span><ul class="myplans">${mine.map(([id,c])=>`<li><span>${esc(c.n)} <span class="muted">· ${PLANS[id]?PLANS[id].days.length:0} zile</span></span><button class="mini" data-del="${id}">Șterge</button></li>`).join("")}</ul></div>`:""}`;
+  $("bName").oninput=e=>bsel.name=e.target.value;
+  $("builder").querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{const n=b.dataset.b;bsel.books=bsel.books.includes(n)?bsel.books.filter(x=>x!==n):[...bsel.books,n];renderBuilder()});
+  $("builder").querySelectorAll("[data-qk]").forEach(b=>b.onclick=()=>{const l=QUICK[+b.dataset.qk][1].map(x=>x[0]),all=l.every(n=>bsel.books.includes(n));
+    bsel.books=all?bsel.books.filter(n=>!l.includes(n)):[...new Set([...bsel.books,...l])];renderBuilder()});
+  $("builder").querySelector("[data-clr]").onclick=()=>{bsel.books=[];renderBuilder()};
+  $("builder").querySelectorAll("[data-cpd]").forEach(b=>b.onclick=()=>{bsel.cpd=+b.dataset.cpd;renderBuilder()});
+  $("bMake").onclick=()=>{if(!bk.length)return;
+    const id="c"+Date.now().toString(36),name=bsel.name.trim()||(bk.length===1?bk[0][0]:"Planul meu")+` în ${days} ${days===1?"zi":"zile"}`;
+    custom[id]={n:name.slice(0,40),books:bk.map(b=>b[0]),cpd:bsel.cpd};store.set("md_custom",custom);loadCustom();
+    bible.plan=id;store.set("md_bible",bible);bsel={name:"",books:[],cpd:2};$("buildD").open=false;renderBiblie();window.scrollTo(0,0)};
+  $("builder").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{
+    if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Confirmă";b.style.color="#C0392B";b.style.borderColor="#C0392B";return}
+    const id=b.dataset.del;delete custom[id];delete bible.done[id];if(bible.plan===id)bible.plan="ioan21";
+    store.set("md_custom",custom);store.set("md_bible",bible);loadCustom();renderBiblie()});
+}
+function renderReadOnly(){const o=$("allDays").open;renderBiblie();$("allDays").open=o}
+
+function renderRug(){
+  const ln=Object.keys(store.get("md_lessons",{})).length;
+  $("rugSeg").innerHTML=[["guided","Rugăciune ghidată","pas cu pas"],["learn","Învață să te rogi",`${ln} din ${LESSONS.length} lecții`]].map(([k,l,sub])=>`<button class="lvl" data-pm="${k}" aria-pressed="${prayMode===k}"><b style="font-size:.95rem">${l}</b><span>${sub}</span></button>`).join("");
+  $("rugSeg").querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{prayMode=b.dataset.pm;store.set("md_praymode",prayMode);renderRug()});
+  $("rugGuided").hidden=prayMode!=="guided";$("rugLearn").hidden=prayMode!=="learn";
+  if(prayMode==="learn"){renderLearn();return}
+  $("exTog").checked=!!pray.ex;$("exTog").onchange=()=>{pray.ex=$("exTog").checked;store.set("md_pray",pray);renderRug()};
+  const PRE=[5,10,20,30],own=!PRE.includes(pray.min);
+  $("durPick").innerHTML=PRE.map(m=>`<button class="lvl" data-m="${m}" aria-pressed="${pray.min===m}"><b>${m}</b><span>minute</span></button>`).join("")
+    +`<button class="lvl" data-own="1" aria-pressed="${own}"><b>${own?pray.min:"Altă"}</b><span>${own?"minute":"durată"}</span></button>`;
+  $("durPick").querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{pray.min=+b.dataset.m;store.set("md_pray",pray);$("durCustom").hidden=true;renderRug()});
+  $("durPick").querySelector("[data-own]").onclick=()=>{$("durCustom").hidden=false;$("rMin").value=own?pray.min:"";$("rMin").focus()};
+  $("rSet").onclick=()=>{const v=parseInt($("rMin").value,10);if(!(v>0)){$("rMin").focus();return}
+    pray.min=Math.min(180,v);store.set("md_pray",pray);$("durCustom").hidden=true;renderRug()};
+  $("rMin").onkeydown=e=>{if(e.key==="Enter")$("rSet").click()};
+  $("srcPick").innerHTML=[["ps","Psalmul zilei"],["plan","Citirea din plan"]].map(([k,l])=>`<button class="lvl" data-s="${k}" aria-pressed="${pray.src===k}"><b style="font-size:.95rem">${l}</b><span>${k==="ps"?psalmToday:PLANS[bible.plan].n}</span></button>`).join("");
+  $("srcPick").querySelectorAll("button").forEach(b=>b.onclick=()=>{pray.src=b.dataset.s;store.set("md_pray",pray);renderRug()});
+  const st=prayerSteps();
+  $("prayCard").innerHTML=`<div class="tag r">Pașii de azi · ${prayPassage()}</div>
+    <div class="plan" style="border:0"><ol>${st.map((s,i)=>`<li style="padding:8px 0"><span class="i">${i+1}</span><span class="n">${s.title}</span><span class="t">${fmt(s.dur)}</span></li>`).join("")}</ol></div>
+    <p class="muted">Ține Biblia deschisă la ${prayPassage()}. Te poți ruga cu voce tare sau în gând. Treci mai departe oricând cu „Sari”.</p>`;
+  $("prayDone").hidden=!has(TODAY,"r");
+}
+
+
+/* ---------- prayer lessons ---------- */
+const EXS=["Doamne, sunt aici. Vreau să fiu cu Tine acum.","Doamne, Tu ești… (spune ce arată textul despre El). Te laud pentru asta.","Îți mulțumesc că mi-ai arătat… Ajută-mă să trăiesc asta azi.","Tată, Îți dau ziua de azi. Nu voia mea, ci voia Ta să se facă.","Doamne, Te rog pentru… (nume). Arată-i bunătatea Ta, așa cum mi-ai arătat-o și mie.","Îți mulțumesc că m-ai ascultat. Ție să-Ți fie slava. Amin."];
+const LESSONS=[
+ {t:"Ce este rugăciunea",txt:["Rugăciunea înseamnă să vorbești cu Dumnezeu și să-L asculți. Nu ai nevoie de cuvinte speciale sau de un ton anume. Isus ne învață să ne adresăm lui Dumnezeu ca unui Tată care ne iubește.","Nu contează cât de frumos vorbești, ci cât de sincer ești. Poți începe exact de unde ești: cu bucurii, cu întrebări, cu temeri sau chiar cu faptul că nu știi ce să spui."],ref:"Matei 6:5-8",ex:"Doamne, nu prea știu cum să mă rog, dar vreau să vorbesc cu Tine. Te rog să mă înveți.",tr:"Spune-I lui Dumnezeu, cu cuvintele tale, un lucru care te bucură și unul care te apasă azi.",dur:3},
+ {t:"Modelul dat de Isus",txt:["Ucenicii L-au rugat pe Isus să-i învețe să se roage, iar El le-a dat rugăciunea „Tatăl nostru”. Nu este doar un text de repetat, ci un model pentru orice rugăciune.","Are câteva părți: începe cu relația (Tatăl nostru), continuă cu închinarea (numele Lui să fie sfințit) și cu predarea (voia Lui să se facă), apoi aduce nevoile zilnice, cererea de iertare și cererea de ocrotire de rău."],ref:"Matei 6:9-13; Luca 11:1-4",ex:"Tată, Tu ești sfânt. Fă-Ți voia în viața mea azi. Dă-mi ce am nevoie, iartă-mă și ajută-mă să-i iert pe alții. Păzește-mă de rău.",tr:"Citește rugăciunea încet, apoi roagă-te din nou, parte cu parte, cu propriile tale cuvinte.",dur:4},
+ {t:"Închinarea: privește la Dumnezeu",txt:["Când începi rugăciunea cu cine este Dumnezeu, problemele tale își găsesc locul potrivit. Închinarea înseamnă să-L lauzi pentru ceea ce este El, nu doar pentru ceea ce face pentru tine.","Cel mai simplu mod: citește un psalm și spune-I lui Dumnezeu ce descoperi acolo despre caracterul Lui."],ref:"Psalmul 145:1-9",ex:"Doamne, Tu ești bun cu toți și plin de îndurare. Ești răbdător cu mine. Te laud pentru că Tu nu Te schimbi.",tr:"Găsește în psalm trei lucruri despre Dumnezeu și laudă-L pentru fiecare dintre ele.",dur:4},
+ {t:"Mulțumirea",txt:["Mulțumirea îți schimbă privirea. Când îți amintești ce a făcut Dumnezeu, îngrijorarea scade și credința crește.","Mulțumește pentru lucrurile mari, dar și pentru cele mărunte: o zi de sănătate, un prieten, o masă caldă."],ref:"Filipeni 4:6-7; 1 Tesaloniceni 5:16-18",ex:"Îți mulțumesc, Doamne, pentru ziua de azi, pentru oamenii pe care mi i-ai dat și pentru că ai grijă de mine chiar și atunci când nu observ.",tr:"Numește cinci lucruri concrete pentru care ești recunoscător azi și mulțumește-I pentru fiecare.",dur:3},
+ {t:"Mărturisirea și iertarea",txt:["Mărturisirea înseamnă să fii sincer cu Dumnezeu despre ce ai greșit. Nu o faci ca să fii pedepsit, ci ca să fii curățat și eliberat.","Dumnezeu promite că îl iartă pe cel care își recunoaște păcatul. După ce ai mărturisit, primește iertarea și nu mai purta povara."],ref:"1 Ioan 1:9; Psalmul 51:1-12",ex:"Doamne, recunosc că azi am greșit când… Îmi pare rău. Iartă-mă și dă-mi o inimă curată. Îți mulțumesc că mă ierți.",tr:"Cere-I lui Dumnezeu să-ți arate un lucru de care trebuie să te pocăiești. Mărturisește-l simplu, apoi mulțumește-I pentru iertare.",dur:4},
+ {t:"Cererile tale și ale altora",txt:["Dumnezeu vrea să-I aduci nevoile tale, mari sau mici. Poți cere cu încredere și să lași în mâna Lui felul și momentul răspunsului.","Rugăciunea pentru alții este un dar: pentru familie, prieteni, colegi, pentru cei bolnavi sau pentru cei care nu-L cunosc pe Dumnezeu. Rostește-le numele înaintea Lui."],ref:"Matei 7:7-11; 1 Timotei 2:1-4",ex:"Tată, am nevoie de înțelepciune pentru… Te rog și pentru… (nume): dă-i pace și arată-i dragostea Ta. Facă-se voia Ta.",tr:"Gândește-te la o nevoie personală și la numele a trei oameni, apoi roagă-te pe scurt pentru fiecare.",dur:4},
+ {t:"Rugăciunea cu Biblia deschisă",txt:["Când nu știi ce să spui, lasă Scriptura să-ți dea cuvintele. Citește un verset, gândește-te la el, apoi transformă-l în rugăciune.","Astfel, rugăciunea nu se mai învârte doar în jurul problemelor tale, ci în jurul a ceea ce spune Dumnezeu."],ref:"Psalmul 23",ex:"Doamne, Tu ești păstorul meu. Condu-mă azi, dă-mi odihnă și ajută-mă să nu mă tem, pentru că Tu ești cu mine.",tr:"Citește Psalmul 23 verset cu verset și, după fiecare, spune-I lui Dumnezeu o propoziție pornind de la el.",dur:5},
+ {t:"Liniștea și obiceiul zilnic",txt:["Rugăciunea nu înseamnă doar să vorbești. Uneori e bine să taci și să asculți, să rămâi fără grabă în prezența lui Dumnezeu.","Ca orice relație, rugăciunea crește prin timpul petrecut împreună. Alege un loc și o oră și revino zilnic, chiar și pentru câteva minute. Isus Însuși căuta locuri liniștite ca să se roage."],ref:"Psalmul 46:10; Marcu 1:35; Daniel 6:10",ex:"Vorbește, Doamne, căci robul Tău ascultă.",tr:"Stai două minute în liniște înaintea lui Dumnezeu. Apoi hotărăște ora și locul în care te vei ruga în fiecare zi.",dur:4}
+];
+let prayMode=store.get("md_praymode","guided");
+function renderLearn(){
+  const done=store.get("md_lessons",{}),n=Object.keys(done).length,next=LESSONS.findIndex((_,i)=>!done[i]);
+  let h=`<div class="card"><div class="tag r">Pentru începători</div><h3>Nu știi cum să te rogi? E în regulă.</h3>
+    <p class="muted">Rugăciunea se învață, ca orice conversație. În ${LESSONS.length} lecții scurte afli ce este rugăciunea și cum să te rogi. Fiecare lecție are un exemplu și un exercițiu de câteva minute.</p>
+    <div class="bar2"><i style="width:${(n/LESSONS.length*100).toFixed(1)}%;background:var(--pray)"></i></div><span class="muted">${n} din ${LESSONS.length} lecții</span></div>`;
+  LESSONS.forEach((L,i)=>{h+=`<details class="lesson" ${i===next?"open":""}><summary><span class="lnum ${done[i]?"done":""}">${done[i]?"✓":i+1}</span><span>${L.t}</span></summary>
+    <div class="pickin">${L.txt.map(t=>`<p>${t}</p>`).join("")}
+    <p><b>Citește:</b> ${L.ref}</p>
+    <div class="example"><div class="tag r">Exemplu de rugăciune</div><p>„${L.ex}”</p></div>
+    <p><b>Încearcă acum:</b> ${L.tr}</p>
+    <div class="opts" style="align-items:center"><button class="btn small pray" data-prac="${i}">Exersează · ${L.dur} min</button>${done[i]?'<span class="ok" style="color:var(--pray)">✓ Lecție terminată</span>':`<button class="ghost" data-lok="${i}">Am înțeles</button>`}</div></div></details>`});
+  if(n>=LESSONS.length)h+=`<div class="donebox">Ai parcurs toate lecțiile. Acum te poți ruga zilnic cu rugăciunea ghidată.<div style="margin-top:10px"><button class="btn small pray" id="toGuided">Mergi la rugăciunea ghidată</button></div></div>`;
+  $("rugLearn").innerHTML=h;
+  const setDone=i=>{const d=store.get("md_lessons",{});d[i]=TODAY;store.set("md_lessons",d)};
+  $("rugLearn").querySelectorAll("[data-lok]").forEach(b=>b.onclick=()=>{setDone(+b.dataset.lok);renderRug()});
+  $("rugLearn").querySelectorAll("[data-prac]").forEach(b=>b.onclick=()=>{const i=+b.dataset.prac,L=LESSONS[i],ph=`Lecția ${i+1} · exercițiu`;
+    runStart([
+      {kind:"time",tone:"pray",phase:ph,title:"Citește",cue:`Citește încet ${L.ref}.`,dur:60,next:"Urmează: <b>Încearcă</b>"},
+      {kind:"time",tone:"pray",phase:ph,title:"Încearcă",cue:L.tr+"\n\nExemplu: „"+L.ex+"”",dur:Math.round((L.dur-1.5)*60),next:"Urmează: <b>Amin</b>"},
+      {kind:"time",tone:"pray",phase:ph,title:"Amin",cue:"Încheie cu mulțumire. Dumnezeu te-a ascultat.",dur:30}
+    ],()=>{const p0=points();setDone(i);mark("r");celebrate(`Lecția ${i+1} terminată`,L.t,p0)})});
+  if($("toGuided"))$("toGuided").onclick=()=>{prayMode="guided";store.set("md_praymode",prayMode);renderRug();window.scrollTo(0,0)};
+}
+
+/* ---------- runner ---------- */
+const R={steps:[],idx:0,rem:0,endAt:0,paused:false,timer:null,onDone:null};
+let ac=null,wake=null,lastBeep=-1;
+function beep(f=880,ms=120,vol=.18){if(!ac)return;try{const o=ac.createOscillator(),g=ac.createGain();
+  o.frequency.value=f;o.connect(g);g.connect(ac.destination);g.gain.setValueAtTime(vol,ac.currentTime);
+  g.gain.exponentialRampToValueAtTime(.001,ac.currentTime+ms/1000);o.start();o.stop(ac.currentTime+ms/1000)}catch(e){}}
+function bell(){beep(523,900,.12);setTimeout(()=>beep(784,1200,.08),120)}
+function runStart(steps,onDone){
+  R.steps=steps;R.onDone=onDone;
+  try{ac=ac||new (window.AudioContext||window.webkitAudioContext)();ac.resume()}catch(e){ac=null}
+  try{navigator.wakeLock&&navigator.wakeLock.request("screen").then(w=>wake=w).catch(()=>{})}catch(e){}
+  $("run").hidden=false;go(0);R.timer=setInterval(tick,100);
+}
+function go(i){
+  if(i>=R.steps.length){runFinish();return}
+  i=Math.max(0,i);R.idx=i;const s=R.steps[i];
+  R.rem=s.dur||0;R.endAt=Date.now()+R.rem*1000;R.paused=false;lastBeep=-1;
+  const tone=s.tone||"work";
+  $("phase").className="phase "+tone;$("arc").setAttribute("class","arc "+tone);
+  $("phase").textContent=s.phase;$("exname").textContent=s.title;$("cue").textContent=s.cue||"";
+  $("count").textContent=s.count||"";$("next").innerHTML=s.next||"";
+  $("progBar").style.width=(i/R.steps.length*100)+"%";
+  $("progBar").style.background=tone==="pray"?"var(--pray)":"var(--accent)";
+  const pb=$("pause");pb.className="btn"+(tone==="pray"?" pray":"");
+  if(s.kind==="reps"){$("secN").className="";$("secN").textContent=s.reps;$("secU").textContent=s.unit;$("arc").style.strokeDashoffset=0;pb.textContent="Gata ✓"}
+  else{pb.textContent="Pauză";$("secU").textContent=tone==="pray"?"timp rămas":"";draw()}
+  if(tone==="pray"){if(i>0)bell()}else if(tone==="work"){beep(1046,250);buzz(120)}
+}
+function draw(){const s=R.steps[R.idx];if(s.kind==="reps")return;const left=Math.max(0,R.rem);
+  const n=$("secN");if(s.dur>=100){n.className="long";n.textContent=fmt(Math.ceil(left))}else{n.className="";n.textContent=Math.ceil(left)}
+  $("arc").style.strokeDashoffset=326.73*(1-left/s.dur)}
+function tick(){const s=R.steps[R.idx];if(!s||R.paused||s.kind==="reps")return;
+  R.rem=(R.endAt-Date.now())/1000;const c=Math.ceil(R.rem);
+  if(s.tone!=="pray"&&c<=3&&c>0&&c!==lastBeep){lastBeep=c;beep(660,100);const n=$("secN");n.classList.remove("pulse");void n.offsetWidth;n.classList.add("pulse");buzz(30)}
+  if(R.rem<=0){go(R.idx+1);return}draw()}
+function runStop(){clearInterval(R.timer);R.timer=null;$("run").hidden=true;try{wake&&wake.release()}catch(e){}wake=null}
+function runFinish(){const s=R.steps[R.steps.length-1];
+  if(s&&s.tone==="pray")bell();else{beep(784,150);setTimeout(()=>beep(1046,300),180)}
+  runStop();R.onDone&&R.onDone();render()}
+$("quit").onclick=()=>{runStop();render()};
+$("skip").onclick=()=>go(R.idx+1);
+$("back").onclick=()=>{let j=R.idx-1;while(j>0&&R.steps[j].kind==="rest")j--;go(j)};
+$("pause").onclick=()=>{const s=R.steps[R.idx];if(s.kind==="reps"){go(R.idx+1);return}
+  if(!R.paused){R.paused=true;R.rem=(R.endAt-Date.now())/1000;$("pause").textContent="Continuă"}
+  else{R.paused=false;R.endAt=Date.now()+R.rem*1000;$("pause").textContent="Pauză"}};
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&R.timer&&!wake&&navigator.wakeLock)navigator.wakeLock.request("screen").then(w=>wake=w).catch(()=>{});
+  if(document.visibilityState==="visible"&&tab==="post")renderPost()});
+setInterval(()=>{if(tab==="post"&&fast.active&&$("run").hidden)renderPost()},30000);
+
+/* ---------- session builders ---------- */
+$("startDaily").onclick=()=>{
+  const L=LEVELS[level],plan=buildPlan(level),st=[{kind:"time",tone:"rest",phase:"Pregătește-te",title:"Urmează: "+plan[0].n,cue:plan[0].c,dur:5,count:"1/"+plan.length}];
+  plan.forEach((e,i)=>{st.push({kind:"time",tone:"work",phase:"Lucru",title:e.n,cue:e.c,dur:L.work,count:`${i+1}/${plan.length}`,next:plan[i+1]?`După: <b>${plan[i+1].n}</b>`:"Ultimul exercițiu"});
+    if(i<plan.length-1)st.push({kind:"rest",tone:"rest",phase:"Pauză",title:"Urmează: "+plan[i+1].n,cue:plan[i+1].c,dur:L.rest,count:`${i+2}/${plan.length}`})});
+  runStart(st,()=>{const p0=points();mark("c");celebrate("Antrenament terminat","Ai pus corpul în mișcare azi.",p0)});
+};
+$("startMil").onclick=()=>{
+  const [w,s]=milSel,S=MIL[s],R2=milRounds(w),st=[
+    {kind:"time",tone:"work",phase:"Încălzire",title:"Rotiri de brațe și mers pe loc",cue:"Rotește brațele înainte și înapoi, apoi mergi alert pe loc.",dur:60,count:"Încălzire"},
+    {kind:"time",tone:"work",phase:"Încălzire",title:"Genuflexiuni și fandări lente",cue:"Mișcări ușoare, fără grabă, ca să pregătești genunchii și șoldurile.",dur:60,count:"Încălzire"}];
+  for(let r=1;r<=R2;r++){
+    S.ex.forEach(([n0,b,u,isTime],i)=>{const n=eff(n0),reps=milReps(b,w),nx=S.ex[i+1]?[eff(S.ex[i+1][0])]:null;
+      st.push(isTime?{kind:"time",tone:"work",phase:`Runda ${r} din ${R2}`,title:n,cue:cueOf(n),dur:reps,count:`${i+1}/${S.ex.length}`,next:nx?`După: <b>${nx[0]}</b>`:""}
+        :{kind:"reps",tone:"work",phase:`Runda ${r} din ${R2}`,title:n,cue:cueOf(n),reps,unit:u==="/picior"?"pe picior":"repetări",count:`${i+1}/${S.ex.length}`,next:nx?`După: <b>${nx[0]}</b>`:""});
+      if(nx)st.push({kind:"rest",tone:"rest",phase:"Pauză scurtă",title:"Urmează: "+nx[0],cue:cueOf(nx[0]),dur:20,count:`${i+2}/${S.ex.length}`});
+    });
+    if(r<R2)st.push({kind:"rest",tone:"rest",phase:"Pauză între runde",title:`Urmează runda ${r+1}`,cue:"Respiră adânc, bea apă și mergi ușor pe loc.",dur:75});
+  }
+  st.push({kind:"time",tone:"rest",phase:"Revenire",title:"Întinderi",cue:"Întinde ușor coapsele, gambele, pieptul și umerii. Respiră lent.",dur:90});
+  runStart(st,()=>{const p0=points();mil.done[w+"-"+s]=TODAY;store.set("md_mil",mil);mark("c");milSel=milNext()||milSel;
+    celebrate(`Săptămâna ${w} · ${S.k} gata`,"Disciplină de soldat. Mâine odihnă sau marș.",p0)});
+};
+$("startPray").onclick=()=>runStart(prayerSteps(),()=>{const p0=points();mark("r");celebrate("Rugăciune încheiată","Pacea Lui să te însoțească azi.",p0)});
+
+$("copy").onclick=()=>{const url=location.href.split("#")[0],m=$("copied");
+  const show=t=>{m.hidden=false;m.textContent=t};
+  try{navigator.clipboard.writeText(url).then(()=>{show("Link copiat");setTimeout(()=>m.hidden=true,2000)}).catch(()=>show(url))}catch(e){show(url)}};
+
+/* ---------- profile ---------- */
+let prof=store.get("md_profile",null);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const Q=[
+ {k:"name",t:"text",l:"Cum te cheamă?",ph:"Prenumele tău"},
+ {k:"age",t:"one",l:"Vârsta",o:["sub 18","18–29","30–44","45–59","60+"]},
+ {k:"hw",t:"nums",l:"Înălțime și greutate (opțional)",f:[["height","Înălțime (cm)"],["weight","Greutate (kg)"]]},
+ {k:"goal",t:"one",l:"Ce vrei în primul rând?",o:["Să slăbesc","Condiție și energie","Forță","Să mă mențin"]},
+ {k:"activity",t:"one",l:"Cât de activ ești acum?",o:["Aproape deloc","1–2 zile pe săptămână","3+ zile pe săptămână"]},
+ {k:"pushups",t:"one",l:"Câte flotări normale poți face acum?",o:["Niciuna","1–5","6–15","Peste 15"]},
+ {k:"limits",t:"many",l:"Ai dureri sau probleme la…",o:["Genunchi","Spate","Încheieturi","Umeri","Nimic"],none:4},
+ {k:"minutes",t:"one",l:"Cât timp ai pentru mișcare într-o zi obișnuită?",o:["5 minute","10 minute","15+ minute"]},
+ {k:"health",t:"many",l:"Ai vreuna dintre acestea? (contează pentru post)",o:["Diabet","Probleme cu tensiunea","Sarcină sau alăptare","Medicamente zilnice","Nimic din acestea"],none:4},
+ {k:"bplan",t:"one",l:"Cu ce plan de citire vrei să începi?",o:[...Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>PLANS[k].n),"Îmi fac propriul plan"]},
+ {k:"pmin",t:"one",l:"Cât timp vrei să te rogi zilnic?",o:["5 minute","10 minute","20 minute","Aleg eu"]}
+];
+const LIM=[
+ ["Genuflexiuni cu săritură","Fandări alternative","Fandări","Patinatorul","Burpees","Burpee militar","Jumping jacks"],
+ ["Superman","Ridicări de picioare","Abdomene","Forfecuțe","Burpees","Burpee militar"],
+ ["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar","Plank cu atingerea umerilor","Alpinist"],
+ ["Dips pe scaun","Flotări cu brațe apropiate","Plank cu atingerea umerilor"]
+];
+const DEF={name:"",age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
+let draft=null,editMode=false;
+function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));showTab("start")}
+function renderStart(){
+  if(!draft)draft=JSON.parse(JSON.stringify(DEF));
+  $("startTitle").textContent=editMode?"Profilul tău":"Bun venit";
+  $("startSub").textContent=editMode?"Schimbă ce vrei. Programul se va potrivi după noile răspunsuri.":"Câteva întrebări ca să-ți potrivim programul. Răspunsurile rămân doar pe telefonul tău.";
+  let h="";
+  Q.forEach(q=>{h+=`<div class="field"><span class="flabel">${q.l}</span>`;
+    if(q.t==="text")h+=`<input class="inp" id="f-${q.k}" value="${esc(draft[q.k]||"")}" placeholder="${q.ph}" maxlength="30" autocomplete="given-name">`;
+    else if(q.t==="nums")h+=`<div class="two">${q.f.map(([k,l])=>`<input class="inp" id="f-${k}" type="number" inputmode="decimal" min="0" step="0.1" placeholder="${l}" aria-label="${l}" value="${esc(draft[k]||"")}">`).join("")}</div>`;
+    else h+=`<div class="chipset">${q.o.map((o,i)=>`<button type="button" class="chip" data-q="${q.k}" data-i="${i}" aria-pressed="${q.t==="one"?draft[q.k]===i:(draft[q.k]||[]).includes(i)}">${o}</button>`).join("")}</div>`;
+    if(q.k==="pmin")h+=`<div class="opts" id="f-pbox" style="align-items:center" ${draft.pmin===3?"":"hidden"}><input class="inp" id="f-pcustom" type="number" inputmode="numeric" min="1" max="180" style="max-width:130px" placeholder="ex.: 15" aria-label="Minute de rugăciune" value="${esc(draft.pcustom||"")}"><span class="muted">minute pe zi</span></div>`;
+    h+="</div>"});
+  h+=`<button class="btn" type="submit">${editMode?"Salvează profilul":"Creează profilul"}</button>`;
+  h+=editMode?`<button class="ghost" type="button" id="cancelProf">Renunță</button>`:`<button class="ghost" type="button" id="skipProf">Sari peste deocamdată</button>`;
+  $("onb").innerHTML=h;
+  ["name","height","weight","pcustom"].forEach(k=>{const el=$("f-"+k);if(el)el.oninput=()=>draft[k]=el.value});
+  $("onb").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
+    const q=Q.find(x=>x.k===b.dataset.q),i=+b.dataset.i;
+    if(q.t==="one")draft[q.k]=i;
+    else{let a=draft[q.k]||[];if(i===q.none)a=[i];else{a=a.filter(x=>x!==q.none);a=a.includes(i)?a.filter(x=>x!==i):[...a,i];if(!a.length)a=[q.none]}draft[q.k]=a}
+    if(q.k==="pmin"){$("f-pbox").hidden=i!==3;if(i===3)$("f-pcustom").focus()}
+    b.parentNode.querySelectorAll(".chip").forEach(c=>{const j=+c.dataset.i;c.setAttribute("aria-pressed",q.t==="one"?draft[q.k]===j:draft[q.k].includes(j))})});
+  if($("cancelProf"))$("cancelProf").onclick=()=>{draft=null;showTab("eu")};
+  if($("skipProf"))$("skipProf").onclick=()=>{store.set("md_skipprof",1);draft=null;showTab("azi")};
+}
+$("onb").onsubmit=e=>{e.preventDefault();saveProfile()};
+function saveProfile(){
+  const p=draft;p.name=String(p.name||"").trim().slice(0,30);
+  const lv=["usor","mediu","greu"],fit=p.activity+(p.pushups>=2?1:0);
+  level=lv[Math.min(fit<=0?0:fit<=2?1:2,p.minutes)];store.set("md_level",level);
+  corpMode=(p.goal===1||p.goal===2)&&p.activity>=1&&p.minutes>=1?"mil":"daily";store.set("md_corpmode",corpMode);
+  if(!Object.keys(mil.done).length){mil.start=p.pushups>=3&&p.activity>=1?3:1;store.set("md_mil",mil);milSel=milNext()||milSel}
+  const add=new Set();
+  if(!p.limits.includes(4))p.limits.forEach(i=>(LIM[i]||[]).forEach(n=>add.add(n)));
+  if(p.pushups===0)["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar"].forEach(n=>add.add(n));
+  if(p.pushups===1)add.add("Flotări cu brațe apropiate");
+  avoid=[...new Set([...avoid,...add])];store.set("md_avoid",avoid);
+  const PR=Object.keys(PLANS).filter(k=>!PLANS[k].custom),ownPlan=p.bplan>=PR.length;
+  if(!ownPlan)bible.plan=PR[p.bplan];store.set("md_bible",bible);
+  pray.min=p.pmin===3?Math.min(180,Math.max(1,parseInt(p.pcustom,10)||15)):([5,10,20][p.pmin]||10);if(p.pmin===3)p.pcustom=pray.min;store.set("md_pray",pray);
+  p.fastRestrict=p.age===0||!p.health.includes(4);
+  const w=parseFloat(String(p.weight||"").replace(",","."));
+  if(w>0)addProg({w});
+  p.created=p.created||TODAY;prof=p;store.set("md_profile",p);draft=null;
+  if(ownPlan){showTab("biblie");$("buildD").open=true;setTimeout(()=>$("buildD").scrollIntoView({behavior:"smooth",block:"start"}),50)}else showTab("eu");
+}
+
+/* ---------- progress ---------- */
+let prog=store.get("md_prog",[]);
+function addProg(v){let e=prog.find(x=>x.d===TODAY);if(!e){e={d:TODAY};prog.push(e)}Object.assign(e,v);prog.sort((a,b)=>a.d<b.d?-1:1);store.set("md_prog",prog)}
+const METRICS=[["w","Greutate","kg"],["t","Talie","cm"],["pu","Flotări","rep."],["sq","Genuflexiuni în 1 minut","rep."],["pl","Plank","sec."]];
+const num=v=>String(Math.round(v*10)/10).replace(".",",");
+const dm=d=>d.slice(8)+"."+d.slice(5,7);
+function spark(pts){
+  const W=300,H=70,px=8,vals=pts.map(p=>p.v);let mn=Math.min(...vals),mx=Math.max(...vals);if(mn===mx){mn-=1;mx+=1}
+  const X=i=>px+i*(W-2*px)/(pts.length-1),Y=v=>8+(1-(v-mn)/(mx-mn))*(H-16);
+  const line=pts.map((p,i)=>`${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(" ");
+  const last=pts[pts.length-1];
+  return`<svg viewBox="0 0 ${W} 92" role="img" aria-label="Evoluție"><line x1="${px}" x2="${W-px}" y1="${H-8}" y2="${H-8}" stroke="var(--line)"/>
+    <polygon points="${px},${H-8} ${line} ${X(pts.length-1)},${H-8}" fill="var(--soft)"/>
+    <polyline points="${line}" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${X(pts.length-1)}" cy="${Y(last.v)}" r="4" fill="var(--accent)"/>
+    <text x="${px}" y="88">${dm(pts[0].d)}</text><text x="${W-px}" y="88" text-anchor="end">${dm(last.d)}</text></svg>`;
+}
+function renderEu(){
+  const G=Q.find(q=>q.k==="goal").o;
+  $("euName").textContent=prof&&prof.name?prof.name:"Profilul tău";
+  $("euGoal").textContent=prof?"Obiectiv: "+G[prof.goal].toLowerCase():"Nu ai încă un profil.";
+  $("editProf").textContent=prof?"Editează":"Creează";
+  $("editProf").onclick=()=>openProfile(!!prof);
+  if(prof){
+    const mn=milNext();
+    const rows=[["Mișcare",corpMode==="mil"?`Program militar · săptămâna ${mn?mn[0]:8}`:`Rutina zilnică · ${LEVELS[level].name}`],
+      ["Citire",PLANS[bible.plan].n],["Rugăciune",pray.min+" minute pe zi"],["Post",prof.fastRestrict?"Doar variantele blânde":"Toate variantele, cu grijă"]];
+    const L=Q.find(q=>q.k==="limits").o,lim=(prof.limits||[]).filter(i=>i!==4).map(i=>L[i].toLowerCase());
+    $("recCard").innerHTML=`<div class="tag c">Programul tău</div><dl class="reclist" style="margin:0">${rows.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
+      ${lim.length?`<p class="muted">Ai menționat probleme la ${lim.length>1?lim.slice(0,-1).join(", ")+" și "+lim[lim.length-1]:lim[0]}. Am scos exercițiile care solicită aceste zone. Dacă durerea continuă, cere sfatul unui medic sau kinetoterapeut.</p>`:""}
+      <p class="muted">Poți schimba oricând nivelul și programul din secțiunea Mișcare.</p>`;
+  }else $("recCard").innerHTML=`<p>Completează profilul ca să primești un program potrivit pentru tine.</p><button class="btn small" id="mk2">Creează profilul</button>`;
+  if($("mk2"))$("mk2").onclick=()=>openProfile(false);
+  const cnt=k=>Object.values(log).filter(x=>x[k]).length;
+  $("stats").innerHTML=[[cnt("c"),"zile cu mișcare"],[Object.keys(mil.done).length,"sesiuni militare"],[cnt("b"),"zile de citire"],[cnt("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],[streak(),"zile active la rând"]]
+    .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
+  renderMedals();
+  let ch="";
+  METRICS.forEach(([k,n,u])=>{const pts=prog.filter(e=>e[k]!=null).map(e=>({d:e.d,v:e[k]}));if(!pts.length)return;
+    const last=pts[pts.length-1],first=pts[0],diff=last.v-first.v;
+    ch+=`<div class="card chart"><div class="row"><b>${n}</b><span class="num" style="font-weight:800;font-size:1.2rem">${num(last.v)} <small class="muted">${u}</small></span></div>
+      ${pts.length>1?`<span class="muted">${diff===0?"La fel ca la început":(diff>0?"+":"−")+num(Math.abs(diff))+" "+u+" față de "+dm(first.d)}</span>${spark(pts)}`:'<span class="muted">Adaugă încă o măsurătoare ca să vezi evoluția.</span>'}</div>`});
+  $("charts").innerHTML=ch;
+  $("progHistD").hidden=!prog.length;
+  $("progHist").innerHTML=prog.slice().reverse().map(e=>`<li><span style="flex:1;min-width:0"><b>${dm(e.d)}</b>${METRICS.filter(([k])=>e[k]!=null).map(([k,n,u])=>`${n.split(" ")[0]} ${num(e[k])} ${u}`).join(" · ")}</span><button class="mini" data-del="${e.d}" aria-label="Șterge">Șterge</button></li>`).join("");
+  $("progHist").querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{prog=prog.filter(e=>e.d!==b.dataset.del);store.set("md_prog",prog);const o=$("progHistD").open;renderEu();$("progHistD").open=o});
+  $("avoidChips").innerHTML=avoid.length?avoid.map(n=>`<button class="chip" data-un="${n}" aria-pressed="true">${n} ✕</button>`).join(""):'<span class="muted">Niciunul deocamdată.</span>';
+  $("avoidChips").querySelectorAll("[data-un]").forEach(b=>b.onclick=()=>{avoid=avoid.filter(x=>x!==b.dataset.un);store.set("md_avoid",avoid);renderEu()});
+  const ALL=[...new Set([...EX.map(e=>e.n),...MIL.flatMap(s=>s.ex.map(x=>x[0]))])].filter(n=>!avoid.includes(n)).sort((a,b)=>a.localeCompare(b,"ro"));
+  $("avSel").innerHTML=ALL.map(n=>`<option>${n}</option>`).join("");
+}
+$("avAdd").onclick=()=>{const n=$("avSel").value;if(n&&!avoid.includes(n)){avoid.push(n);store.set("md_avoid",avoid);renderEu()}};
+$("saveProg").onclick=()=>{
+  const v={};[["w","p-w"],["t","p-t"],["pu","p-pu"],["sq","p-sq"],["pl","p-pl"]].forEach(([k,id])=>{const x=parseFloat($(id).value.replace(",","."));if(x>0)v[k]=x;$(id).value=""});
+  if(!Object.keys(v).length){$("progMsg").textContent="Completează cel puțin o valoare.";return}
+  addProg(v);renderEu();$("progMsg").textContent="Salvat";setTimeout(()=>$("progMsg").textContent="",2000);
+};
+
+/* ---------- points, levels, medals, celebration ---------- */
+const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
+const cntK=k=>Object.values(log).filter(x=>x[k]).length;
+function points(){let p=0;for(const d in log){const x=log[d];p+=(x.c?10:0)+(x.b?10:0)+(x.r?10:0)+(x.c&&x.b&&x.r?10:0)}
+  return p+Object.keys(mil.done).length*5+fast.count*20}
+const LVT=[0,50,150,300,500,800,1200,1700,2300],LVN=["Început","Pas cu pas","Statornic","Perseverent","Luptător","Atlet","Veteran","Neclintit","Biruitor"];
+function lvl(p){let i=0;while(i<LVT.length-1&&p>=LVT[i+1])i++;return{i,name:LVN[i],cur:LVT[i],next:LVT[i+1]||null}}
+function bestStreak(){const ds=Object.keys(log).filter(d=>Object.keys(log[d]).length).sort();let b=0,c=0,prev=null;
+  for(const d of ds){const t=Date.parse(d+"T12:00:00");c=prev&&Math.round((t-prev)/864e5)===1?c+1:1;prev=t;b=Math.max(b,c)}return b}
+const BADGES=[
+ {id:"first",n:"Primul pas",g:"1",t:"x",d:"Prima zi activă",ok:()=>Object.keys(log).length>0},
+ {id:"s3",n:"Trei la rând",g:"3",t:"x",d:"3 zile active la rând",ok:()=>bestStreak()>=3},
+ {id:"s7",n:"O săptămână",g:"7",t:"x",d:"7 zile la rând",ok:()=>bestStreak()>=7},
+ {id:"s30",n:"O lună",g:"30",t:"x",d:"30 de zile la rând",ok:()=>bestStreak()>=30},
+ {id:"full",n:"Ziua completă",g:"3/3",t:"x",d:"Mișcare, Biblie și rugăciune",ok:()=>Object.values(log).some(x=>x.c&&x.b&&x.r)},
+ {id:"c10",n:"Zece antrenamente",g:"10",t:"c",d:"10 zile cu mișcare",ok:()=>cntK("c")>=10},
+ {id:"milw",n:"Recrut",g:"S1",t:"c",d:"O săptămână militară",ok:()=>{for(let w=1;w<=8;w++)if([0,1,2].every(s=>mil.done[w+"-"+s]))return true;return false}},
+ {id:"mila",n:"Veteran",g:"8",t:"c",d:"Programul militar complet",ok:()=>Object.keys(mil.done).length>=24},
+ {id:"b7",n:"Cititor",g:"7",t:"b",d:"7 zile de citire",ok:()=>cntK("b")>=7},
+ {id:"plan",n:"Plan terminat",g:"✓",t:"b",d:"Un plan de citire întreg",ok:()=>Object.entries(PLANS).some(([k,p])=>Object.keys(bible.done[k]||{}).length>=p.days.length)},
+ {id:"r10",n:"Om al rugăciunii",g:"10",t:"r",d:"10 zile de rugăciune",ok:()=>cntK("r")>=10},
+ {id:"learn",n:"Ucenic",g:"8",t:"r",d:"Toate lecțiile de rugăciune",ok:()=>Object.keys(store.get("md_lessons",{})).length>=8},
+ {id:"fast",n:"Primul post",g:"P",t:"p",d:"Un post încheiat",ok:()=>fast.count>=1},
+ {id:"meas",n:"Pe drumul bun",g:"↗",t:"p",d:"Două măsurători",ok:()=>prog.length>=2}
+];
+function checkBadges(){const got=store.get("md_badges",{}),nw=[];BADGES.forEach(b=>{if(!got[b.id]&&b.ok()){got[b.id]=TODAY;nw.push(b)}});store.set("md_badges",got);return nw}
+const medalHTML=(b,on)=>`<div class="medal ${on?"":"locked"}"><div class="disc ${b.t}">${b.g}</div><b>${b.n}</b><span>${b.d}</span></div>`;
+function renderMedals(){checkBadges();const got=store.get("md_badges",{});
+  $("medalsT").textContent=`Medalii · ${Object.keys(got).length} din ${BADGES.length}`;
+  $("medals").innerHTML=BADGES.map(b=>medalHTML(b,!!got[b.id])).join("")}
+function renderHero(){
+  const done=["c","b","r"].filter(k=>has(TODAY,k)).length,hr=new Date().getHours();
+  const gr=(hr<11?"Bună dimineața":hr<18?"Bună ziua":"Bună seara")+(prof&&prof.name?", "+esc(prof.name):"");
+  const msg=done===3?"Ziua e completă. Bravo!":done===0?"Începe cu un pas mic.":`${done} din 3 azi. Mai ai puțin.`;
+  const p=points(),L=lvl(p),pct=L.next?(p-L.cur)/(L.next-L.cur)*100:100;
+  const R=[[46,"c","#FFFFFF"],[35,"b","#FFD66B"],[24,"r","#F5C6FF"]];
+  $("hero").innerHTML=`<div class="rings"><svg viewBox="0 0 112 112" role="img" aria-label="${done} din 3 activități azi">${R.map(([r,k,col])=>{const C=(2*Math.PI*r).toFixed(1);
+    return`<circle class="tr" cx="56" cy="56" r="${r}"/><circle class="a" cx="56" cy="56" r="${r}" stroke="${col}" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-to="${has(TODAY,k)?0:C}"/>`}).join("")}</svg></div>
+    <div style="min-width:0"><p>${gr}</p><h3>${msg}</h3>
+    <div class="hlegend"><span><i style="background:#FFFFFF"></i>Mișcare</span><span><i style="background:#FFD66B"></i>Biblie</span><span><i style="background:#F5C6FF"></i>Rugăciune</span></div>
+    <div class="lvrow"><span>Nivel ${L.i+1} · ${L.name}</span><span>${p}${L.next?" / "+L.next:""} p</span></div><div class="xp"><i data-w="${pct.toFixed(1)}"></i></div></div>`;
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{$("hero").querySelectorAll("[data-to]").forEach(c=>c.style.strokeDashoffset=c.dataset.to);
+    const x=$("hero").querySelector("[data-w]");x.style.width=x.dataset.w+"%"}));
+}
+function celebrate(title,sub,p0){
+  const p1=points(),L0=lvl(p0),L1=lvl(p1),nb=checkBadges();
+  $("celeT").textContent=title;$("celeS").textContent=sub;
+  $("celeP").textContent=p1>p0?`+${p1-p0} puncte`:"Bravo, încă o dată!";
+  $("celeL").innerHTML=L1.i>L0.i?`<div class="lvup">Ai urcat la nivelul ${L1.i+1}: ${L1.name}</div>`:"";
+  $("celeB").style.gridTemplateColumns=`repeat(${Math.min(nb.length,3)||1},1fr)`;
+  $("celeB").innerHTML=nb.length?nb.map(b=>medalHTML(b,true)).join(""):"";
+  $("cele").hidden=false;$("celeOk").focus();buzz([60,40,60]);confetti();
+  beep(784,150);setTimeout(()=>beep(988,150),150);setTimeout(()=>beep(1318,300),300);
+}
+$("celeOk").onclick=()=>{$("cele").hidden=true;render()};
+function confetti(){
+  try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)return}catch(e){}
+  const cv=$("confetti"),ctx=cv.getContext("2d");if(!ctx)return;cv.hidden=false;
+  const W=cv.width=innerWidth,H=cv.height=innerHeight,cs=getComputedStyle(document.documentElement);
+  const cols=["--accent","--rest","--pray","--hero1"].map(v=>cs.getPropertyValue(v).trim()||"#2448D8");
+  const ps=Array.from({length:150},()=>({x:W/2+(Math.random()-.5)*60,y:H*.38,vx:(Math.random()-.5)*13,vy:-Math.random()*13-4,r:Math.random()*6.28,vr:(Math.random()-.5)*.3,s:5+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)]}));
+  const t0=performance.now();
+  (function f(t){ctx.clearRect(0,0,W,H);const k=(t-t0)/2600;
+    ps.forEach(p=>{p.vy+=.32;p.vx*=.99;p.x+=p.vx;p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.globalAlpha=Math.max(0,1-k);ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2);ctx.restore()});
+    if(k<1)requestAnimationFrame(f);else{ctx.clearRect(0,0,W,H);cv.hidden=true}})(t0);
+}
+document.addEventListener("touchstart",()=>{},{passive:true});
+checkBadges();
+$("resetAsk").onclick=()=>{$("resetAsk").hidden=true;$("resetConfirm").hidden=false};
+$("resetNo").onclick=()=>{$("resetConfirm").hidden=true;$("resetAsk").hidden=false};
+$("resetYes").onclick=()=>{
+  try{Object.keys(localStorage).filter(k=>k.startsWith("md_")).forEach(k=>localStorage.removeItem(k))}catch(e){}
+  try{history.replaceState(null,"",location.pathname+location.search)}catch(e){}
+  location.reload();
+};
+
+if(!prof&&!store.get("md_skipprof",0)&&!location.hash)openProfile(false);else showTab(tab);
+</script>
+
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
+(function(){
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
+  const standalone=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
+  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  let no=false;try{no=localStorage.getItem("md_noinstall")==="1"}catch(e){}
+  if(standalone||no)return;
+  const card=document.getElementById("installCard"),txt=document.getElementById("instTxt"),help=document.getElementById("instHelp"),btn=document.getElementById("instBtn");
+  let deferred=null;
+  window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;txt.textContent="Pune aplicația pe ecranul principal, ca pe orice altă aplicație.";card.hidden=false});
+  window.addEventListener("appinstalled",()=>{card.hidden=true});
+  if(ios){
+    txt.textContent="Pune aplicația pe ecranul principal al iPhone-ului.";btn.textContent="Vezi cum";
+    help.textContent="În Safari, apasă butonul Partajare (pătratul cu săgeata în sus), apoi „Adaugă pe ecranul principal”. După instalare, deschide aplicația din iconiță: progresul tău se salvează acolo.";
+    card.hidden=false;
+  }else{
+    setTimeout(()=>{if(!deferred){txt.textContent="Pune aplicația pe ecranul principal.";btn.textContent="Vezi cum";
+      help.textContent="În Chrome, apasă meniul (cele trei puncte) și alege „Instalează aplicația” sau „Adaugă pe ecranul de pornire”.";card.hidden=false}},2500);
+  }
+  btn.onclick=()=>{if(deferred){deferred.prompt();deferred.userChoice.finally(()=>{deferred=null;card.hidden=true})}else help.hidden=false};
+  document.getElementById("instNo").onclick=()=>{try{localStorage.setItem("md_noinstall","1")}catch(e){}card.hidden=true};
+})();
+</script>
+</body>
+</html>
