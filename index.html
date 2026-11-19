@@ -250,11 +250,6 @@ body.onb .tabs{display:none}
       <div class="streak"><div class="num" id="streak">0</div><small>zile active<br>la rând</small></div>
     </div>
     <div class="hero" id="hero"></div>
-    <div class="card" id="installCard" hidden>
-      <div class="row"><div><div class="tag c">Instalează</div><div style="font-weight:600" id="instTxt">Pune aplicația pe ecranul principal.</div></div><button class="btn small" id="instBtn">Instalează</button></div>
-      <p class="muted" id="instHelp" hidden></p>
-      <button class="mini" id="instNo" style="align-self:flex-start">Nu acum</button>
-    </div>
     <section>
       <h2>Săptămâna ta</h2>
       <div class="week" id="week"></div>
@@ -354,6 +349,7 @@ body.onb .tabs{display:none}
   <section class="view" id="v-eu" hidden>
     <div class="top"><div><h1 id="euName">Profilul tău</h1><p class="date" id="euGoal"></p></div><button class="ghost" id="editProf">Editează</button></div>
     <div class="card" id="recCard"></div>
+    <button class="btn" id="instOpen" hidden>Instalează aplicația pe telefon</button>
     <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
     <section><h2 id="medalsT">Medalii</h2><div class="medals" id="medals"></div></section>
     <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0">Progresul fizic</h2>
@@ -1138,28 +1134,80 @@ if(!prof&&!store.get("md_skipprof",0)&&!location.hash)openProfile(false);else sh
 </script>
 
 
+<div class="sheet-bg" id="instSheet" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="instT">
+    <div class="sheet-head"><img src="icon-192.png" alt="" width="64" height="64"><div><h3 id="instT">Instalează Trup și Suflet</h3><p class="muted">Gratuit, fără magazin de aplicații.</p></div></div>
+    <p id="instLead">Pune aplicația pe ecranul telefonului. Se va deschide pe tot ecranul, ca orice altă aplicație, și va merge și fără internet.</p>
+    <ol class="steps" id="instSteps" hidden></ol>
+    <button class="btn" id="sheetGo">Instalează</button>
+    <button class="ghost" id="sheetLater">Mai târziu</button>
+  </div>
+</div>
+<style>
+.sheet-bg{position:fixed;inset:0;z-index:40;background:rgba(8,14,12,.55);display:flex;align-items:flex-end;justify-content:center}
+.sheet{background:var(--surface);color:var(--ink);width:100%;max-width:520px;border-radius:24px 24px 0 0;display:flex;flex-direction:column;gap:14px;
+  padding:22px max(20px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-left,0px));animation:sheetUp .35s cubic-bezier(.2,.9,.3,1)}
+.sheet-head{display:flex;gap:14px;align-items:center}
+.sheet-head img{border-radius:16px;flex:none}
+.sheet h3{font-size:1.25rem}
+.steps{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px;counter-reset:s}
+.steps li{display:flex;gap:12px;align-items:center;background:var(--soft);border-radius:12px;padding:10px 12px;font-size:.95rem;counter-increment:s}
+.steps li::before{content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-weight:800;flex:none;font-family:var(--display)}
+.steps svg{width:22px;height:22px;vertical-align:-5px;fill:none;stroke:var(--accent);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@keyframes sheetUp{from{transform:translateY(40%);opacity:.5}}
+@media (prefers-reduced-motion:reduce){.sheet{animation:none}}
+</style>
 <script>
 if("serviceWorker" in navigator){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{})})}
 (function(){
   try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{})}catch(e){}
+  const ua=navigator.userAgent||"";
   const standalone=(window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone===true;
-  const ios=/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
-  let no=false;try{no=localStorage.getItem("md_noinstall")==="1"}catch(e){}
-  if(standalone||no)return;
-  const card=document.getElementById("installCard"),txt=document.getElementById("instTxt"),help=document.getElementById("instHelp"),btn=document.getElementById("instBtn");
+  const ios=/iphone|ipad|ipod/i.test(ua)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1);
+  const android=/android/i.test(ua);
+  const inApp=/FBAN|FBAV|FB_IAB|Instagram|Line\/|Messenger|TikTok|Snapchat|GSA\//i.test(ua);
+  const iosSafari=ios&&/Safari/i.test(ua)&&!/CriOS|FxiOS|EdgiOS|OPiOS/i.test(ua);
+  const $i=id=>document.getElementById(id);
+  const sheet=$i("instSheet"),go=$i("sheetGo"),steps=$i("instSteps"),lead=$i("instLead"),openBtn=$i("instOpen");
   let deferred=null;
-  window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;txt.textContent="Pune aplicația pe ecranul principal, ca pe orice altă aplicație.";card.hidden=false});
-  window.addEventListener("appinstalled",()=>{card.hidden=true});
-  if(ios){
-    txt.textContent="Pune aplicația pe ecranul principal al iPhone-ului.";btn.textContent="Vezi cum";
-    help.textContent="În Safari, apasă butonul Partajare (pătratul cu săgeata în sus), apoi „Adaugă pe ecranul principal”. După instalare, deschide aplicația din iconiță: progresul tău se salvează acolo.";
-    card.hidden=false;
-  }else{
-    setTimeout(()=>{if(!deferred){txt.textContent="Pune aplicația pe ecranul principal.";btn.textContent="Vezi cum";
-      help.textContent="În Chrome, apasă meniul (cele trei puncte) și alege „Instalează aplicația” sau „Adaugă pe ecranul de pornire”.";card.hidden=false}},2500);
+  const SHARE='<svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M6 11v9h12v-9"/></svg>';
+  const PLUS='<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4"/><path d="M12 8v8M8 12h8"/></svg>';
+  const DOTS='<svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>';
+  function guide(){
+    let li;
+    if(inApp)li=["Atinge meniul aplicației în care ai deschis linkul (sus, în colț).",ios?"Alege „Deschide în Safari”.":"Alege „Deschide în Chrome” sau „Deschide în browser”.","Acolo, instalează aplicația din pop-up."];
+    else if(ios&&iosSafari)li=[`Apasă butonul Partajare ${SHARE} din bara de jos (sau de sus) a Safari.`,`Derulează și alege „Adaugă pe ecranul principal” ${PLUS}.`,"Apasă „Adaugă”. Aplicația apare pe ecran cu iconița ei."];
+    else if(ios)li=[`Apasă butonul Partajare ${SHARE} al browserului.`,`Alege „Adaugă pe ecranul principal” ${PLUS}.`,"Dacă nu găsești opțiunea, deschide linkul în Safari și încearcă de acolo."];
+    else if(android)li=[`Apasă meniul browserului ${DOTS} (cele trei puncte, sus în dreapta).`,"Alege „Instalează aplicația” sau „Adaugă pe ecranul de pornire”.","Confirmă cu „Instalează”."];
+    else li=["Deschide linkul pe telefon, în Chrome (Android) sau Safari (iPhone).","Urmează pașii din pop-up-ul de instalare."];
+    steps.innerHTML=li.map(t=>`<li><span>${t}</span></li>`).join("");steps.hidden=false;
+    lead.textContent=ios?"Pe iPhone, instalarea se face din meniul Partajare, în 3 pași:":"Urmează acești pași:";
+    go.textContent="Am înțeles";go.dataset.close="1";
   }
-  btn.onclick=()=>{if(deferred){deferred.prompt();deferred.userChoice.finally(()=>{deferred=null;card.hidden=true})}else help.hidden=false};
-  document.getElementById("instNo").onclick=()=>{try{localStorage.setItem("md_noinstall","1")}catch(e){}card.hidden=true};
+  function open(){
+    steps.hidden=true;delete go.dataset.close;
+    lead.textContent="Pune aplicația pe ecranul telefonului. Se va deschide pe tot ecranul, ca orice altă aplicație, și va merge și fără internet.";
+    if(deferred)go.textContent="Instalează";else guide();
+    sheet.hidden=false;
+  }
+  function close(later){sheet.hidden=true;if(later){try{localStorage.setItem("md_instlater",String(Date.now()))}catch(e){}}}
+  go.onclick=()=>{
+    if(go.dataset.close){close(true);return}
+    if(deferred){deferred.prompt();deferred.userChoice.then(r=>{deferred=null;if(r&&r.outcome==="accepted")close(false);else guide()}).catch(()=>guide())}
+    else guide();
+  };
+  $i("sheetLater").onclick=()=>close(true);
+  sheet.addEventListener("click",e=>{if(e.target===sheet)close(true)});
+  window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();deferred=e;if(!sheet.hidden&&!go.dataset.close)go.textContent="Instalează"});
+  window.addEventListener("appinstalled",()=>{close(false);if(openBtn)openBtn.hidden=true});
+  if(standalone)return;
+  if(openBtn){openBtn.hidden=false;openBtn.onclick=open}
+  let last=0;try{last=+localStorage.getItem("md_instlater")||0}catch(e){}
+  if(Date.now()-last<3*864e5)return;
+  let tries=0;const t=setInterval(()=>{tries++;
+    if(document.body.classList.contains("onb")&&tries<300)return;
+    if(!document.getElementById("run").hidden||!document.getElementById("cele").hidden)return;
+    clearInterval(t);open()},1500);
 })();
 </script>
 </body>
