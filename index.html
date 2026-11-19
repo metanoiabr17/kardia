@@ -171,6 +171,7 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+textarea.inp{resize:vertical;min-height:110px;line-height:1.45}
 .copy{text-align:center;color:var(--muted);font-size:.75rem;opacity:.8}
 .welcome{min-height:calc(100vh - 80px);min-height:calc(100dvh - 80px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
 .wlogo{width:120px;height:120px;border-radius:30px;background:linear-gradient(135deg,#1C1C1F,#050506);display:grid;place-items:center;margin-bottom:6px;box-shadow:0 12px 30px rgba(0,0,0,.3)}
@@ -392,6 +393,15 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
           <span>Datele nu mai pot fi recuperate.</span>
           <div class="opts"><button class="btn small" id="resetYes" style="background:#C0392B;color:#FFFFFF">Da, șterge tot</button><button class="ghost" id="resetNo">Renunță</button></div>
         </div>
+      </div>
+    </section>
+    <section><h2>Sugestii</h2>
+      <div class="card" id="sgCard">
+        <p class="muted">Ai o idee pentru Kardia sau ai găsit ceva care nu merge? Scrie aici și ajunge direct la autorul aplicației.</p>
+        <div class="chipset" id="sgType"></div>
+        <textarea class="inp" id="sgMsg" rows="4" maxlength="2000" placeholder="Sugestia ta…" aria-label="Sugestia ta"></textarea>
+        <input class="inp" id="sgName" maxlength="60" placeholder="Numele tău (opțional)" aria-label="Numele tău (opțional)" autocomplete="given-name">
+        <div class="opts" style="align-items:center"><button class="btn small" id="sgSend">Trimite</button><span class="muted" id="sgState" role="status"></span></div>
       </div>
     </section>
     <p class="copy">Kardia · © 2026 Daniel Mehedinți. Toate drepturile rezervate.</p>
@@ -1057,6 +1067,7 @@ function renderEu(){
   $("stats").innerHTML=[[cnt("c"),"zile cu mișcare"],[Object.keys(mil.done).length,"sesiuni militare"],[cnt("b"),"zile de citire"],[cnt("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],[streak(),"zile active la rând"]]
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
+  renderSuggest();
   let ch="";
   METRICS.forEach(([k,n,u])=>{const pts=prog.filter(e=>e[k]!=null).map(e=>({d:e.d,v:e[k]}));if(!pts.length)return;
     const last=pts[pts.length-1],first=pts[0],diff=last.v-first.v;
@@ -1078,6 +1089,29 @@ $("saveProg").onclick=()=>{
   addProg(v);renderEu();$("progMsg").textContent="Salvat";setTimeout(()=>$("progMsg").textContent="",2000);
 };
 
+
+/* ---------- suggestions ---------- */
+let sgType="Idee";
+function renderSuggest(){
+  $("sgType").innerHTML=["Idee","Problemă","Altceva"].map(t=>`<button type="button" class="chip" data-sg="${t}" aria-pressed="${sgType===t}">${t}</button>`).join("");
+  $("sgType").querySelectorAll("[data-sg]").forEach(b=>b.onclick=()=>{sgType=b.dataset.sg;renderSuggest()});
+  if(!$("sgName").value&&prof&&prof.name)$("sgName").value=prof.name;
+}
+$("sgSend").onclick=async()=>{
+  const msg=$("sgMsg").value.trim(),st=$("sgState"),btn=$("sgSend");
+  if(msg.length<3){st.textContent="Scrie mai întâi sugestia.";$("sgMsg").focus();return}
+  if(navigator.onLine===false){st.textContent="Nu ai internet. Încearcă din nou când ești online.";return}
+  btn.disabled=true;btn.textContent="Se trimite…";st.textContent="";
+  try{
+    const r=await fetch("https://formsubmit.co/ajax/daniel.mehedinti@gmail.com",{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},
+      body:JSON.stringify({_subject:`Kardia – sugestie nouă (${sgType})`,_template:"table",_captcha:"false",Tip:sgType,Mesaj:msg,Nume:$("sgName").value.trim()||"anonim",Data:new Date().toLocaleString("ro-RO")})});
+    const j=await r.json().catch(()=>({}));
+    if(r.ok&&String(j.success)==="true"){$("sgMsg").value="";st.textContent="";
+      $("sgCard").insertAdjacentHTML("beforeend",'<div class="donebox" id="sgOk">Mulțumim! Sugestia ta a fost trimisă.</div>');setTimeout(()=>{const o=$("sgOk");if(o)o.remove()},5000)}
+    else st.textContent=/activ/i.test(j.message||"")?"Formularul așteaptă activarea de către autor. Încearcă puțin mai târziu.":"Nu s-a putut trimite. Încearcă din nou.";
+  }catch(e){st.textContent="Nu s-a putut trimite. Verifică internetul și încearcă din nou."}
+  finally{btn.disabled=false;btn.textContent="Trimite"}
+};
 /* ---------- points, levels, medals, celebration ---------- */
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 const cntK=k=>Object.values(log).filter(x=>x[k]).length;
