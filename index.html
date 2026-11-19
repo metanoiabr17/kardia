@@ -171,6 +171,11 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.mcat{grid-column:1/-1;display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:8px}
+.mcat:first-child{margin-top:0}
+.medal .mp{width:70%;height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:2px}
+.medal .mp i{display:block;height:100%;background:var(--accent)}
+.medal small{font-size:.66rem;color:var(--muted);font-variant-numeric:tabular-nums}
 .sweek{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;height:110px;margin-top:4px}
 .sbar{display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
 .scol{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center}
@@ -1230,30 +1235,78 @@ const LVT=[0,50,150,300,500,800,1200,1700,2300],LVN=["Început","Pas cu pas","St
 function lvl(p){let i=0;while(i<LVT.length-1&&p>=LVT[i+1])i++;return{i,name:LVN[i],cur:LVT[i],next:LVT[i+1]||null}}
 function bestStreak(){const ds=Object.keys(log).filter(d=>Object.keys(log[d]).length).sort();let b=0,c=0,prev=null;
   for(const d of ds){const t=Date.parse(d+"T12:00:00");c=prev&&Math.round((t-prev)/864e5)===1?c+1:1;prev=t;b=Math.max(b,c)}return b}
+function bestFull(){const ds=Object.keys(log).filter(d=>{const x=log[d];return x.c&&x.b&&x.r}).sort();let b=0,c=0,prev=null;
+  for(const d of ds){const t=Date.parse(d+"T12:00:00");c=prev&&Math.round((t-prev)/864e5)===1?c+1:1;prev=t;b=Math.max(b,c)}return b}
+const fullDays=()=>Object.values(log).filter(x=>x.c&&x.b&&x.r).length;
+const totSteps=()=>Object.values(steps).reduce((a,v)=>a+v,0);
+const planDone=k=>PLANS[k]&&Object.keys(bible.done[k]||{}).length>=PLANS[k].days.length;
+const milWeek=()=>{for(let w=1;w<=8;w++)if([0,1,2].every(s=>mil.done[w+"-"+s]))return true;return false};
+const nL=k=>Object.keys(store.get(k,{})).length;
+/* fiecare medalie: id, nume, simbol, culoare, categorie, descriere, progres [actual, țintă] */
+const B=(id,n,g,t,cat,d,cur,target)=>({id,n,g,t,cat,d,pr:()=>[Math.min(cur(),target),target],ok:()=>cur()>=target});
 const BADGES=[
- {id:"first",n:"Primul pas",g:"1",t:"x",d:"Prima zi activă",ok:()=>Object.keys(log).length>0},
- {id:"s3",n:"Trei la rând",g:"3",t:"x",d:"3 zile active la rând",ok:()=>bestStreak()>=3},
- {id:"s7",n:"O săptămână",g:"7",t:"x",d:"7 zile la rând",ok:()=>bestStreak()>=7},
- {id:"s30",n:"O lună",g:"30",t:"x",d:"30 de zile la rând",ok:()=>bestStreak()>=30},
- {id:"full",n:"Ziua completă",g:"3/3",t:"x",d:"Mișcare, Biblie și rugăciune",ok:()=>Object.values(log).some(x=>x.c&&x.b&&x.r)},
- {id:"c10",n:"Zece antrenamente",g:"10",t:"c",d:"10 zile cu mișcare",ok:()=>cntK("c")>=10},
- {id:"milw",n:"Recrut",g:"S1",t:"c",d:"O săptămână militară",ok:()=>{for(let w=1;w<=8;w++)if([0,1,2].every(s=>mil.done[w+"-"+s]))return true;return false}},
- {id:"mila",n:"Veteran",g:"8",t:"c",d:"Programul militar complet",ok:()=>Object.keys(mil.done).length>=24},
- {id:"b7",n:"Cititor",g:"7",t:"b",d:"7 zile de citire",ok:()=>cntK("b")>=7},
- {id:"plan",n:"Plan terminat",g:"✓",t:"b",d:"Un plan de citire întreg",ok:()=>Object.entries(PLANS).some(([k,p])=>Object.keys(bible.done[k]||{}).length>=p.days.length)},
- {id:"r10",n:"Om al rugăciunii",g:"10",t:"r",d:"10 zile de rugăciune",ok:()=>cntK("r")>=10},
- {id:"st10k",n:"10.000 de pași",g:"10k",t:"c",d:"10.000 de pași într-o zi",ok:()=>Object.values(steps).some(v=>v>=10000)},
- {id:"runall",n:"Alergător",g:"30′",t:"c",d:"Programul de alergare complet",ok:()=>Object.keys(run.done).length>=24},
- {id:"blearn",n:"Cititor ucenic",g:"8",t:"b",d:"Toate lecțiile despre citire",ok:()=>Object.keys(store.get("md_blessons",{})).length>=8},
- {id:"learn",n:"Ucenic",g:"8",t:"r",d:"Toate lecțiile de rugăciune",ok:()=>Object.keys(store.get("md_lessons",{})).length>=8},
- {id:"fast",n:"Primul post",g:"P",t:"p",d:"Un post încheiat",ok:()=>fast.count>=1},
- {id:"meas",n:"Pe drumul bun",g:"↗",t:"p",d:"Două măsurători",ok:()=>prog.length>=2}
+ B("first","Primul pas","1","x","Constanță","Prima zi activă",()=>Object.keys(log).length,1),
+ B("s3","Trei la rând","3","x","Constanță","3 zile active la rând",bestStreak,3),
+ B("s7","O săptămână","7","x","Constanță","7 zile la rând",bestStreak,7),
+ B("s14","Două săptămâni","14","x","Constanță","14 zile la rând",bestStreak,14),
+ B("s30","O lună","30","x","Constanță","30 de zile la rând",bestStreak,30),
+ B("s100","Neclintit","100","x","Constanță","100 de zile la rând",bestStreak,100),
+ B("s365","Un an întreg","365","x","Constanță","365 de zile la rând",bestStreak,365),
+ B("full","Ziua completă","3/3","x","Constanță","Mișcare, Biblie și rugăciune în aceeași zi",fullDays,1),
+ B("full10","Zece zile depline","10","x","Constanță","10 zile complete",fullDays,10),
+ B("fullw","Săptămâna perfectă","7/7","x","Constanță","7 zile complete la rând",bestFull,7),
+ B("lv4","Perseverent","N4","x","Constanță","Ajungi la nivelul 4",()=>lvl(points()).i+1,4),
+ B("lv9","Biruitor","N9","x","Constanță","Ajungi la ultimul nivel",()=>lvl(points()).i+1,9),
+
+ B("c10","Zece antrenamente","10","c","Mișcare","10 zile cu mișcare",()=>cntK("c"),10),
+ B("c30","Treizeci de zile","30","c","Mișcare","30 de zile cu mișcare",()=>cntK("c"),30),
+ B("c100","Sută la sută","100","c","Mișcare","100 de zile cu mișcare",()=>cntK("c"),100),
+ B("milw","Recrut","S1","c","Mișcare","O săptămână din programul militar",()=>milWeek()?1:0,1),
+ B("milh","Soldat","12","c","Mișcare","12 sesiuni militare",()=>Object.keys(mil.done).length,12),
+ B("mila","Veteran","24","c","Mișcare","Programul militar complet",()=>Object.keys(mil.done).length,24),
+ B("run1","Prima alergare","1","c","Mișcare","Prima sesiune de alergare",()=>Object.keys(run.done).length,1),
+ B("run12","La jumătatea drumului","12","c","Mișcare","12 sesiuni de alergare",()=>Object.keys(run.done).length,12),
+ B("runall","Alergător","30′","c","Mișcare","Programul de alergare complet",()=>Object.keys(run.done).length,24),
+ B("st10k","10.000 de pași","10k","c","Mișcare","10.000 de pași într-o zi",()=>Math.max(0,...Object.values(steps)),10000),
+ B("st100k","Drumeț","100k","c","Mișcare","100.000 de pași notați",totSteps,100000),
+ B("st1m","Milionar de pași","1M","c","Mișcare","1.000.000 de pași notați",totSteps,1000000),
+
+ B("b1","Prima citire","1","b","Cuvântul","Prima zi de citire",()=>cntK("b"),1),
+ B("b7","Cititor","7","b","Cuvântul","7 zile de citire",()=>cntK("b"),7),
+ B("b30","O lună în Cuvânt","30","b","Cuvântul","30 de zile de citire",()=>cntK("b"),30),
+ B("b100","Rădăcini adânci","100","b","Cuvântul","100 de zile de citire",()=>cntK("b"),100),
+ B("b365","Un an în Cuvânt","365","b","Cuvântul","365 de zile de citire",()=>cntK("b"),365),
+ B("plan","Plan terminat","✓","b","Cuvântul","Un plan de citire întreg",()=>Object.keys(PLANS).filter(planDone).length,1),
+ B("plan3","Trei planuri","3","b","Cuvântul","Trei planuri de citire terminate",()=>Object.keys(PLANS).filter(planDone).length,3),
+ B("ioan","Ucenic al lui Ioan","In","b","Cuvântul","Evanghelia după Ioan citită",()=>planDone("ioan21")?1:0,1),
+ B("nt","Noul Testament","NT","b","Cuvântul","Tot Noul Testament citit",()=>planDone("nt90")?1:0,1),
+ B("bib","Toată Biblia","VT+NT","b","Cuvântul","Biblia citită într-un an",()=>planDone("bib365")?1:0,1),
+ B("own","Planul meu","+","b","Cuvântul","Ți-ai creat propriul plan",()=>Object.keys(custom).length,1),
+ B("blearn","Cititor ucenic","8","b","Cuvântul","Toate lecțiile despre citire",()=>nL("md_blessons"),8),
+
+ B("r1","Prima rugăciune","1","r","Rugăciune","Prima zi de rugăciune",()=>cntK("r"),1),
+ B("r7","O săptămână de rugăciune","7","r","Rugăciune","7 zile de rugăciune",()=>cntK("r"),7),
+ B("r10","Om al rugăciunii","10","r","Rugăciune","10 zile de rugăciune",()=>cntK("r"),10),
+ B("r30","Statornic în rugăciune","30","r","Rugăciune","30 de zile de rugăciune",()=>cntK("r"),30),
+ B("r100","Rugăciune neîncetată","100","r","Rugăciune","100 de zile de rugăciune",()=>cntK("r"),100),
+ B("learn","Ucenic","8","r","Rugăciune","Toate lecțiile de rugăciune",()=>nL("md_lessons"),8),
+
+ B("fast","Primul post","P","p","Post și progres","Un post încheiat",()=>fast.count,1),
+ B("fast5","Postitor statornic","5","p","Post și progres","5 posturi încheiate",()=>fast.count,5),
+ B("fast20","Inimă disciplinată","20","p","Post și progres","20 de posturi încheiate",()=>fast.count,20),
+ B("meas1","Punct de plecare","0","p","Post și progres","Prima măsurătoare",()=>prog.length,1),
+ B("meas","Pe drumul bun","↗","p","Post și progres","Două măsurători",()=>prog.length,2),
+ B("meas6","Schimbare vizibilă","6","p","Post și progres","Șase măsurători",()=>prog.length,6)
 ];
 function checkBadges(){const got=store.get("md_badges",{}),nw=[];BADGES.forEach(b=>{if(!got[b.id]&&b.ok()){got[b.id]=TODAY;nw.push(b)}});store.set("md_badges",got);return nw}
-const medalHTML=(b,on)=>`<div class="medal ${on?"":"locked"}"><div class="disc ${b.t}">${b.g}</div><b>${b.n}</b><span>${b.d}</span></div>`;
+const fmtN=v=>v>=10000?Math.round(v/1000).toLocaleString("ro-RO")+"k":v.toLocaleString("ro-RO");
+const medalHTML=(b,on)=>{let pr="";if(!on){const [c,t]=b.pr();if(t>1)pr=`<div class="mp"><i style="width:${(c/t*100).toFixed(0)}%"></i></div><small>${fmtN(c)} / ${fmtN(t)}</small>`}
+  return`<div class="medal ${on?"":"locked"}"><div class="disc ${b.t}">${b.g}</div><b>${b.n}</b><span>${b.d}</span>${pr}</div>`};
 function renderMedals(){checkBadges();const got=store.get("md_badges",{});
-  $("medalsT").textContent=`Medalii · ${Object.keys(got).length} din ${BADGES.length}`;
-  $("medals").innerHTML=BADGES.map(b=>medalHTML(b,!!got[b.id])).join("")}
+  $("medalsT").textContent=`Medalii · ${BADGES.filter(b=>got[b.id]).length} din ${BADGES.length}`;
+  const cats=[...new Set(BADGES.map(b=>b.cat))];
+  $("medals").innerHTML=cats.map(c=>{const list=BADGES.filter(b=>b.cat===c),n=list.filter(b=>got[b.id]).length;
+    return`<div class="mcat"><span>${c}</span><span>${n} din ${list.length}</span></div>`+list.sort((x,y)=>(!!got[y.id])-(!!got[x.id])).map(b=>medalHTML(b,!!got[b.id])).join("")}).join("")}
 function renderHero(){
   const done=["c","b","r"].filter(k=>has(TODAY,k)).length,hr=new Date().getHours();
   const gr=(hr<11?"Bună dimineața":hr<18?"Bună ziua":"Bună seara")+(prof&&prof.name?", "+esc(prof.name):"");
