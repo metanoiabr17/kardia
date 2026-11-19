@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Kardia, aplicație gratuită pentru trup și suflet: exerciții cu greutatea corpului, post, citirea Bibliei și rugăciune.">
-<meta name="theme-color" content="#EDF1EF" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#0F1614" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -15,7 +15,7 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="icon-180.png">
 <style>
-:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{color-scheme:dark;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0;font:14px system-ui,-apple-system,"Segoe UI",sans-serif}
 img{max-width:100%}[hidden]{display:none!important}
 </style>
@@ -24,18 +24,14 @@ img{max-width:100%}[hidden]{display:none!important}
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;700;800;900&family=Inter:wght@400;500;600&display=swap">
 <style>
 /* Layout: phone-app column with a bottom tab bar; guided sessions (workout, prayer) run in a full-screen layer with a countdown ring */
+/* Kardia: o singură temă, negru cu roșu (ca iconița) */
 :root{
-  --bg:#EDF1EF; --surface:#FFFFFF; --ink:#13201B; --muted:#5B6B64; --line:#D5DDD9;
-  --accent:#2448D8; --accent-ink:#FFFFFF; --rest:#C98F00; --pray:#7A4FB8; --soft:#E1E7FB; --warn:#FFF4D6; --hero1:#2448D8; --hero2:#7A3FB8;
+  --bg:#0B0B0C; --surface:#161618; --ink:#F2F2F3; --muted:#9C9CA4; --line:#2A2A2F;
+  --accent:#E5303F; --accent-ink:#FFFFFF; --rest:#F2B84B; --pray:#9466F2; --soft:#2A1417; --warn:#2A2312; --hero1:#1E1E21; --hero2:#09090A;
   --display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  color-scheme:dark;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0F1614; --surface:#18211E; --ink:#E8EEEB; --muted:#93A39C; --line:#2A3632;
-  --accent:#6F8CFF; --accent-ink:#0B1020; --rest:#F2C14A; --pray:#B79BFF; --soft:#1E2747; --warn:#2E2814; --hero1:#22348F; --hero2:#55307F; color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0F1614; --surface:#18211E; --ink:#E8EEEB; --muted:#93A39C; --line:#2A3632;
-  --accent:#6F8CFF; --accent-ink:#0B1020; --rest:#F2C14A; --pray:#B79BFF; --soft:#1E2747; --warn:#2E2814; --hero1:#22348F; --hero2:#55307F; color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
 summary::-webkit-details-marker{display:none}
@@ -198,7 +194,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 .myplans li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 0;border-top:1px solid var(--line);font-size:.9rem}
 .myplans li span{min-width:0}
 /* hero with daily rings */
-.hero{background:linear-gradient(150deg,var(--hero1),var(--hero2));color:#FFFFFF;border-radius:22px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.hero{background:linear-gradient(150deg,var(--hero1),var(--hero2));border:1px solid var(--line);color:#FFFFFF;border-radius:22px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
 .rings{width:112px;height:112px}
 .rings svg{width:100%;height:100%;transform:rotate(-90deg)}
 .rings circle{fill:none;stroke-width:9;stroke-linecap:round}
@@ -211,15 +207,15 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 .hlegend i{width:8px;height:8px;border-radius:50%;display:inline-block}
 .lvrow{font-family:var(--display);font-weight:800;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;display:flex;justify-content:space-between;gap:8px;margin-top:10px;font-variant-numeric:tabular-nums}
 .xp{height:8px;background:rgba(255,255,255,.22);border-radius:4px;overflow:hidden;margin-top:5px}
-.xp i{display:block;height:100%;width:0;background:#FFFFFF;border-radius:4px;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
+.xp i{display:block;height:100%;width:0;background:var(--accent);border-radius:4px;transition:width 1.1s cubic-bezier(.2,.8,.2,1)}
 /* medals */
 .medals{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .medal{display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:12px 4px;background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .medal b{font-size:.78rem;line-height:1.2}
 .medal span{font-size:.68rem;color:var(--muted);line-height:1.25}
 .disc{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:900;color:#FFFFFF;font-size:1rem;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),0 0 0 3px var(--surface),0 0 0 5px var(--line)}
-.disc.c{background:var(--hero1)} .disc.b{background:#C98F00} .disc.r{background:var(--hero2)} .disc.p{background:#5B6B64}
-.disc.x{background:linear-gradient(135deg,var(--hero1),#C98F00,var(--hero2))}
+.disc.c{background:var(--accent)} .disc.b{background:#C98F00} .disc.r{background:var(--pray)} .disc.p{background:#55555C}
+.disc.x{background:linear-gradient(135deg,var(--accent),#C98F00,var(--pray))}
 .medal.locked .disc{background:var(--line);color:var(--muted);box-shadow:none}
 .medal.locked b{color:var(--muted)}
 /* celebration */
@@ -673,7 +669,7 @@ function renderAzi(){
   ];
   $("today").style.cssText="display:flex;flex-direction:column;gap:10px";
   $("today").innerHTML=cards.map(c=>`<div class="card"><div class="row"><div><div class="tag ${c.t}">${c.tag}</div><div style="font-weight:600">${c.title}</div></div>
-    ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest)"':c.t==="p"?'style="background:var(--muted)"':""}>Deschide</button>`}</div></div>`).join("");
+    ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest);color:#141414"':c.t==="p"?'style="background:var(--muted)"':""}>Deschide</button>`}</div></div>`).join("");
   $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
   if(!prof){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag c">Profil</div><div style="font-weight:600">Răspunde la câteva întrebări ca să-ți potrivim programul.</div></div><button class="btn small" id="mkProf">Începe</button></div></div>`);
     $("mkProf").onclick=()=>openProfile(false)}
@@ -722,7 +718,7 @@ function renderPost(){
       <div class="big">${Math.floor(el)}h ${String(Math.floor(el%1*60)).padStart(2,"0")}m</div>
       <div class="bar2"><i style="width:${pct}%"></i></div>
       <p class="muted">Ținta: ${A.label}, până ${end.toLocaleString("ro-RO",{weekday:"long",hour:"2-digit",minute:"2-digit"})}. Când îți e foame, roagă-te sau citește ${f.ref}.</p>
-      <div class="opts"><button class="btn small" id="endFast" style="background:var(--rest)">Încheie postul</button><button class="ghost" id="dropFast">Anulează</button></div></div>`;
+      <div class="opts"><button class="btn small" id="endFast" style="background:var(--rest);color:#141414">Încheie postul</button><button class="ghost" id="dropFast">Anulează</button></div></div>`;
     $("endFast").onclick=()=>{const p0=points();fast.count++;fast.active=null;store.set("md_fast",fast);renderPost();celebrate("Post încheiat","Rupe postul încet, cu o masă ușoară.",p0)};
     $("dropFast").onclick=()=>{fast.active=null;store.set("md_fast",fast);renderPost()};
   }else $("fastActive").innerHTML="";
@@ -751,7 +747,7 @@ function renderBiblie(){
     const readToday=Object.values(D).includes(TODAY);
     $("readCard").innerHTML=`<div class="tag b">${esc(P.n)} · ziua ${i+1} din ${P.days.length}</div><div class="bar2"><i style="width:${(Object.keys(D).length/P.days.length*100).toFixed(1)}%"></i></div><div class="reading">${P.days[i]}</div>
       ${readToday?'<p class="muted">Ai citit deja azi. Poți merge mai departe, dacă vrei.</p>':""}
-      <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest)">Am citit</button><button class="ghost" id="readPray">Roagă-te cu acest text</button></div>`;
+      <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest);color:#141414">Am citit</button><button class="ghost" id="readPray">Roagă-te cu acest text</button></div>`;
     $("readOk").onclick=()=>{const p0=points();D[i]=TODAY;store.set("md_bible",bible);mark("b");renderBiblie();celebrate("Citire bifată",`Ziua ${i+1}: ${P.days[i]}`,p0)};
     $("readPray").onclick=()=>{pray.src="plan";store.set("md_pray",pray);showTab("rug")};
   }
@@ -775,7 +771,7 @@ function renderBuilder(){
     <div class="field"><span class="flabel">Noul Testament</span><div class="chipset">${chips(NT)}</div></div>
     <div class="field"><span class="flabel">Capitole pe zi, în medie</span><div class="chipset">${[1,2,3,4,5].map(n=>`<button type="button" class="chip" data-cpd="${n}" aria-pressed="${bsel.cpd===n}">${n}</button>`).join("")}</div></div>
     <div class="donebox">${bk.length?`${bk.length} ${bk.length===1?"carte":"cărți"} · ${N} capitole · ${days} ${days===1?"zi":"zile"}<br><span class="muted" style="font-weight:400">Capitolele scurte se citesc împreună, ca zilele să fie cam egale.</span>`:"Alege cel puțin o carte."}</div>
-    <button class="btn" id="bMake" style="background:var(--rest)" ${bk.length?"":"disabled"}>Creează planul</button>
+    <button class="btn" id="bMake" style="background:var(--rest);color:#141414" ${bk.length?"":"disabled"}>Creează planul</button>
     ${mine.length?`<div><span class="flabel">Planurile tale</span><ul class="myplans">${mine.map(([id,c])=>`<li><span>${esc(c.n)} <span class="muted">· ${PLANS[id]?PLANS[id].days.length:0} zile</span></span><button class="mini" data-del="${id}">Șterge</button></li>`).join("")}</ul></div>`:""}`;
   $("bName").oninput=e=>bsel.name=e.target.value;
   $("builder").querySelectorAll("[data-b]").forEach(b=>b.onclick=()=>{const n=b.dataset.b;bsel.books=bsel.books.includes(n)?bsel.books.filter(x=>x!==n):[...bsel.books,n];renderBuilder()});
@@ -1112,11 +1108,11 @@ function renderHero(){
   const gr=(hr<11?"Bună dimineața":hr<18?"Bună ziua":"Bună seara")+(prof&&prof.name?", "+esc(prof.name):"");
   const msg=done===3?"Ziua e completă. Bravo!":done===0?"Începe cu un pas mic.":`${done} din 3 azi. Mai ai puțin.`;
   const p=points(),L=lvl(p),pct=L.next?(p-L.cur)/(L.next-L.cur)*100:100;
-  const R=[[46,"c","#FFFFFF"],[35,"b","#FFD66B"],[24,"r","#F5C6FF"]];
+  const R=[[46,"c","#E5303F"],[35,"b","#FFD66B"],[24,"r","#B994FF"]];
   $("hero").innerHTML=`<div class="rings"><svg viewBox="0 0 112 112" role="img" aria-label="${done} din 3 activități azi">${R.map(([r,k,col])=>{const C=(2*Math.PI*r).toFixed(1);
     return`<circle class="tr" cx="56" cy="56" r="${r}"/><circle class="a" cx="56" cy="56" r="${r}" stroke="${col}" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-to="${has(TODAY,k)?0:C}"/>`}).join("")}</svg></div>
     <div style="min-width:0"><p>${gr}</p><h3>${msg}</h3>
-    <div class="hlegend"><span><i style="background:#FFFFFF"></i>Mișcare</span><span><i style="background:#FFD66B"></i>Biblie</span><span><i style="background:#F5C6FF"></i>Rugăciune</span></div>
+    <div class="hlegend"><span><i style="background:#E5303F"></i>Mișcare</span><span><i style="background:#FFD66B"></i>Biblie</span><span><i style="background:#B994FF"></i>Rugăciune</span></div>
     <div class="lvrow"><span>Nivel ${L.i+1} · ${L.name}</span><span>${p}${L.next?" / "+L.next:""} p</span></div><div class="xp"><i data-w="${pct.toFixed(1)}"></i></div></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{$("hero").querySelectorAll("[data-to]").forEach(c=>c.style.strokeDashoffset=c.dataset.to);
     const x=$("hero").querySelector("[data-w]");x.style.width=x.dataset.w+"%"}));
@@ -1136,7 +1132,7 @@ function confetti(){
   try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)return}catch(e){}
   const cv=$("confetti"),ctx=cv.getContext("2d");if(!ctx)return;cv.hidden=false;
   const W=cv.width=innerWidth,H=cv.height=innerHeight,cs=getComputedStyle(document.documentElement);
-  const cols=["--accent","--rest","--pray","--hero1"].map(v=>cs.getPropertyValue(v).trim()||"#2448D8");
+  const cols=["--accent","--rest","--pray","--ink"].map(v=>cs.getPropertyValue(v).trim()||"#2448D8");
   const ps=Array.from({length:150},()=>({x:W/2+(Math.random()-.5)*60,y:H*.38,vx:(Math.random()-.5)*13,vy:-Math.random()*13-4,r:Math.random()*6.28,vr:(Math.random()-.5)*.3,s:5+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)]}));
   const t0=performance.now();
   (function f(t){ctx.clearRect(0,0,W,H);const k=(t-t0)/2600;
