@@ -11,4 +11,4 @@
 Datele (profil, progres, planuri) se salvează doar pe telefonul fiecăruia.
 
 ---
-© 2026 Daniel Mehedinti. Toate drepturile rezervate.
+© 2026 Daniel Mehedinți. Toate drepturile rezervate.
