@@ -7,6 +7,8 @@
 <meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#0B0B0C" media="(prefers-color-scheme: dark)">
 <meta name="format-detection" content="telephone=no">
+<meta name="author" content="Daniel Mehedinti">
+<meta name="copyright" content="© 2026 Daniel Mehedinti">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -169,6 +171,7 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.copy{text-align:center;color:var(--muted);font-size:.75rem;opacity:.8}
 .welcome{min-height:calc(100vh - 80px);min-height:calc(100dvh - 80px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
 .wlogo{width:120px;height:120px;border-radius:30px;background:linear-gradient(135deg,#1C1C1F,#050506);display:grid;place-items:center;margin-bottom:6px;box-shadow:0 12px 30px rgba(0,0,0,.3)}
 .wlogo svg{width:92px;height:92px}
@@ -391,6 +394,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
         </div>
       </div>
     </section>
+    <p class="copy">Kardia · © 2026 Daniel Mehedinti. Toate drepturile rezervate.</p>
   </section>
 
   <!-- ÎNSCRIERE -->
@@ -967,7 +971,7 @@ function renderStart(){
       <h1 class="brand">Kardia</h1><div class="tagline">Pentru trup și suflet</div>
       <ul class="wlist"><li><b>Mișcare</b> zilnică, doar cu greutatea corpului</li><li><b>Cuvântul</b> lui Dumnezeu, cu planuri de citire</li><li><b>Rugăciune</b> ghidată și lecții pentru începători</li></ul>
       <button class="btn" type="button" id="wStart">Să începem</button>
-      <p class="muted">Durează un minut. Răspunsurile rămân doar pe telefonul tău.</p></div>`;
+      <p class="muted">Durează un minut. Răspunsurile rămân doar pe telefonul tău.</p><p class="copy">© 2026 Daniel Mehedinti</p></div>`;
     $("wStart").onclick=()=>{draft.started=true;$("startTitle").parentNode.hidden=false;renderStart();window.scrollTo(0,0)};
     return;
   }

@@ -9,3 +9,6 @@
 - **iPhone (Safari):** deschide linkul, apasă Partajare → „Adaugă pe ecranul principal”.
 
 Datele (profil, progres, planuri) se salvează doar pe telefonul fiecăruia.
+
+---
+© 2026 Daniel Mehedinti. Toate drepturile rezervate.
