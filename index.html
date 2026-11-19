@@ -173,6 +173,13 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.welcome{min-height:calc(100vh - 80px);min-height:calc(100dvh - 80px);display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:14px}
+.wlogo{width:120px;height:120px;border-radius:30px;background:linear-gradient(150deg,var(--hero1),var(--hero2));display:grid;place-items:center;margin-bottom:6px;box-shadow:0 12px 30px rgba(36,72,216,.25)}
+.wlogo svg{width:84px;height:84px}
+.welcome h1.brand{font-size:3rem}
+.wlist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:10px;text-align:left;width:100%;max-width:340px}
+.wlist li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:.95rem}
+.welcome .btn{max-width:340px}
 h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 .tagline{font-family:var(--display);font-weight:700;font-size:.92rem;color:var(--accent);margin-top:6px}
 .cue{white-space:pre-line}
@@ -954,6 +961,18 @@ let draft=null,editMode=false;
 function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));showTab("start")}
 function renderStart(){
   if(!draft)draft=JSON.parse(JSON.stringify(DEF));
+  if(!editMode&&!draft.started){
+    $("startTitle").textContent="";$("startSub").textContent="";$("startTitle").parentNode.hidden=true;
+    $("onb").innerHTML=`<div class="welcome">
+      <div class="wlogo" aria-hidden="true"><svg viewBox="0 0 112 112">${[[46,"#FFFFFF",.83],[33,"#FFD66B",.64],[20,"#F5C6FF",.45]].map(([r,c,f])=>{const C=2*Math.PI*r;return`<circle cx="56" cy="56" r="${r}" fill="none" stroke="rgba(255,255,255,.18)" stroke-width="9"/><circle cx="56" cy="56" r="${r}" fill="none" stroke="${c}" stroke-width="9" stroke-linecap="round" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${(C*(1-f)).toFixed(1)}" transform="rotate(-90 56 56)"/>`}).join("")}</svg></div>
+      <h1 class="brand">Kardia</h1><div class="tagline">Pentru trup și suflet</div>
+      <ul class="wlist"><li><b>Mișcare</b> zilnică, doar cu greutatea corpului</li><li><b>Cuvântul</b> lui Dumnezeu, cu planuri de citire</li><li><b>Rugăciune</b> ghidată și lecții pentru începători</li></ul>
+      <button class="btn" type="button" id="wStart">Să începem</button>
+      <p class="muted">Durează un minut. Răspunsurile rămân doar pe telefonul tău.</p></div>`;
+    $("wStart").onclick=()=>{draft.started=true;$("startTitle").parentNode.hidden=false;renderStart();window.scrollTo(0,0)};
+    return;
+  }
+  $("startTitle").parentNode.hidden=false;
   $("startTitle").textContent=editMode?"Profilul tău":"Bun venit";
   $("startSub").textContent=editMode?"Schimbă ce vrei. Programul se va potrivi după noile răspunsuri.":"Câteva întrebări ca să-ți potrivim programul. Răspunsurile rămân doar pe telefonul tău.";
   let h="";
