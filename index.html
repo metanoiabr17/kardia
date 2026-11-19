@@ -171,6 +171,10 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.yv{display:flex;flex-direction:column;gap:8px;font-size:.85rem}
+.blink{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:var(--bg);color:var(--ink);text-decoration:none;border-radius:999px;padding:7px 12px;font-weight:600;font-size:.85rem}
+.blink::after{content:"↗";color:var(--rest)}
+.blink:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 .mcat{grid-column:1/-1;display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-top:8px}
 .mcat:first-child{margin-top:0}
 .medal .mp{width:70%;height:4px;background:var(--line);border-radius:2px;overflow:hidden;margin-top:2px}
@@ -785,7 +789,7 @@ function renderBiblie(){
     $("resetPlan").onclick=()=>{bible.done[bible.plan]={};store.set("md_bible",bible);renderBiblie()};}
   else{
     const readToday=Object.values(D).includes(TODAY);
-    $("readCard").innerHTML=`<div class="tag b">${esc(P.n)} · ziua ${i+1} din ${P.days.length}</div><div class="bar2"><i style="width:${(Object.keys(D).length/P.days.length*100).toFixed(1)}%"></i></div><div class="reading">${P.days[i]}</div>
+    $("readCard").innerHTML=`<div class="tag b">${esc(P.n)} · ziua ${i+1} din ${P.days.length}</div><div class="bar2"><i style="width:${(Object.keys(D).length/P.days.length*100).toFixed(1)}%"></i></div><div class="reading">${P.days[i]}</div>${readLinks(P.days[i])}
       ${readToday?'<p class="muted">Ai citit deja azi. Poți merge mai departe, dacă vrei.</p>':""}
       <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest);color:#141414">Am citit</button><button class="ghost" id="readPray">Roagă-te cu acest text</button></div>`;
     $("readOk").onclick=()=>{const p0=points();D[i]=TODAY;store.set("md_bible",bible);mark("b");renderBiblie();celebrate("Citire bifată",`Ziua ${i+1}: ${P.days[i]}`,p0)};
@@ -850,7 +854,7 @@ function renderRug(){
   const st=prayerSteps();
   $("prayCard").innerHTML=`<div class="tag r">Pașii de azi · ${prayPassage()}</div>
     <div class="plan" style="border:0"><ol>${st.map((s,i)=>`<li style="padding:8px 0"><span class="i">${i+1}</span><span class="n">${s.title}</span><span class="t">${fmt(s.dur)}</span></li>`).join("")}</ol></div>
-    <p class="muted">Ține Biblia deschisă la ${prayPassage()}. Te poți ruga cu voce tare sau în gând. Treci mai departe oricând cu „Sari”.</p>`;
+    ${readLinks(prayPassage())}<p class="muted">Ține Biblia deschisă la ${prayPassage()}. Te poți ruga cu voce tare sau în gând. Treci mai departe oricând cu „Sari”.</p>`;
   $("prayDone").hidden=!has(TODAY,"r");
 }
 
@@ -912,6 +916,21 @@ function renderRun(){
     runStart(st,()=>{const p0=points();run.done[w+"-"+s]=TODAY;store.set("md_run",run);mark("c");runSel=runNext()||runSel;speak("Felicitări! Ai terminat.");
       celebrate(`Alergare · săptămâna ${w} gata`,`Sesiunea ${s+1} din 3. Bea apă și odihnește-te.`,p0)});
   };
+}
+
+
+/* ---------- links to the online Bible (YouVersion, Cornilescu) ---------- */
+const USFM="GEN EXO LEV NUM DEU JOS JDG RUT 1SA 2SA 1KI 2KI 1CH 2CH EZR NEH EST JOB PSA PRO ECC SNG ISA JER LAM EZK DAN HOS JOL AMO OBA JON MIC NAM HAB ZEP HAG ZEC MAL MAT MRK LUK JHN ACT ROM 1CO 2CO GAL EPH PHP COL 1TH 2TH 1TI 2TI TIT PHM HEB JAS 1PE 2PE 1JN 2JN 3JN JUD REV".split(" ");
+const BCODE={};[...OT,...NT].forEach((b,i)=>BCODE[b[0]]=USFM[i]);BCODE["Psalmul"]="PSA";
+const yvUrl=(code,ch)=>`https://www.bible.com/bible/191/${code}.${ch}.VDC`;
+function readLinks(text){
+  const out=[];
+  text.split(";").forEach(seg=>{const m=seg.trim().match(/^(.+?)\s+(\d[\d,\s–:\-]*)$/);if(!m)return;const code=BCODE[m[1]];if(!code)return;
+    const nums=m[2].includes(",")?m[2].split(",").map(x=>parseInt(x,10)):[parseInt(m[2],10)];
+    const label=m[1]==="Psalmii"||m[1]==="Psalmul"?"Psalmul":m[1];
+    const multi=m[2].includes(",");nums.forEach(n=>{if(n>0)out.push(`<a class="blink" href="${yvUrl(code,n)}" target="_blank" rel="noopener">${label} ${multi?n:m[2].trim()}</a>`)})});
+  if(!out.length)return"";
+  return`<div class="yv"><span class="muted">Nu ai o Biblie la îndemână? Citește aici, gratuit, în YouVersion (traducerea Cornilescu):</span><div class="opts">${out.join("")}</div></div>`;
 }
 
 /* ---------- Bible reading lessons ---------- */
