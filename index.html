@@ -171,6 +171,17 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.frlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.frlist>li{padding:12px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.frlist>li:first-child{border-top:0;padding-top:0}
+.frrow{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.frrow small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
+.frdots{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.frdots span{font-size:.7rem;padding:2px 8px;border-radius:999px;border:1px solid var(--line);color:var(--muted)}
+.frdots span.on{border-color:var(--c);color:var(--ink);background:color-mix(in srgb,var(--c) 22%,transparent)}
+.frcheer{display:flex;flex-direction:column;gap:10px;background:var(--bg);border-radius:12px;padding:12px}
+.frinv{display:flex;flex-direction:column;gap:8px;background:var(--bg);border:1px dashed var(--serve);border-radius:12px;padding:12px}
+.frcode{font-family:var(--display);font-weight:900;font-size:2rem;letter-spacing:.18em;color:var(--serve)}
 .pts .pers{font-size:1.2rem;line-height:1.35;color:var(--ink);font-weight:800;text-wrap:balance}
 .pts .ptsm{font-family:var(--body);font-size:.9rem;font-weight:600;color:var(--accent);margin-top:8px}
 .wnote{max-width:340px;font-size:.92rem;color:var(--ink);opacity:.85;line-height:1.5}
@@ -411,6 +422,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <div class="top"><div><h1 id="euName">Profilul tău</h1><p class="date" id="euGoal"></p></div><button class="ghost" id="editProf">Editează</button></div>
     <div class="card" id="recCard"></div>
     <button class="btn" id="instOpen" hidden>Instalează aplicația pe telefon</button>
+    <section id="frSec"><h2>Prieteni</h2><div class="card" id="frCard"></div></section>
     <section><h2>Mementouri</h2><div class="card" id="remCard"></div></section>
     <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
     <section id="shSec"><h2>Împărtășește progresul</h2>
@@ -530,7 +542,7 @@ const dayNum=Math.floor(new Date(TODAY+"T12:00:00").getTime()/864e5);
 /* ---------- daily log ---------- */
 let log=store.get("md_log",null);
 if(!log){log={};for(const d of store.get("md_history",[])){log[d]={c:1}}store.set("md_log",log)}
-function mark(k){log[TODAY]=log[TODAY]||{};log[TODAY][k]=1;store.set("md_log",log)}
+function mark(k){log[TODAY]=log[TODAY]||{};log[TODAY][k]=1;store.set("md_log",log);friendSoon()}
 const has=(d,k)=>!!(log[d]&&log[d][k]);
 function streak(){
   const active=d=>log[d]&&Object.keys(log[d]).length>0;
@@ -764,6 +776,9 @@ function renderAzi(){
   $("today").innerHTML=cards.filter(c=>useA(c.t)).map(c=>`<div class="card"><div class="row"><div><div class="tag ${c.t}">${c.tag}</div><div style="font-weight:600">${c.title}</div></div>
     ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest);color:#141414"':c.t==="p"?'style="background:var(--muted)"':c.t==="s"?'style="background:var(--serve)"':""}>Deschide</button>`}</div></div>`).join("");
   $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
+  const unread=(fr.inbox||[]).filter(m=>m.ts>(fr.seen||0));
+  if(unread.length){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">Încurajare</div><div style="font-weight:600">${esc(unread[0].name)}: „${esc(unread[0].msg)}”</div></div><button class="btn small" id="frSee" style="background:var(--serve)">Vezi</button></div></div>`);$("frSee").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
+  if(pendCode){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag s">Invitație</div><div style="font-weight:600">Un prieten vrea să vă însoțiți în Kardia.</div></div><button class="btn small" id="frSeeInv" style="background:var(--serve)">Vezi</button></div></div>`);$("frSeeInv").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
   if(!prof){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag c">Profil</div><div style="font-weight:600">Răspunde la câteva întrebări ca să-ți potrivim programul.</div></div><button class="btn small" id="mkProf">Începe</button></div></div>`);
     $("mkProf").onclick=()=>openProfile(false)}
 }
@@ -1303,6 +1318,7 @@ function renderEu(){
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
   renderRem();
+  renderFriends();
   renderShare();
   renderSuggest();
   let ch="";
@@ -1380,7 +1396,7 @@ const b64u8=b=>{const s=atob((b+"=".repeat((4-b.length%4)%4)).replace(/-/g,"+").
 const pMsg=t=>{const el=$("pMsg");if(el)el.textContent=t};
 async function pushReg(){if(!pushSupported())return null;try{return await navigator.serviceWorker.getRegistration()||null}catch(e){return null}}
 async function pushPost(path,sub){let tz="Europe/Bucharest";try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||tz}catch(e){}
-  const r=await fetch(PUSH_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sub,rem,tz})});
+  const r=await fetch(PUSH_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({sub,rem,tz,uid:me().id})});
   const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok)throw new Error("server");return j}
 async function pushEnable(){
   const reg=await pushReg();
@@ -1527,6 +1543,68 @@ function renderServe(){
   if($("svDone"))$("svDone").onclick=()=>{const p0=points(),t=$("svNote").value.trim().slice(0,200);
     serveLog.push({d:TODAY,t});store.set("md_serve",serveLog);mark("s");renderServe();
     celebrate("Încă o zi în care ai slujit","„Mie mi le-ați făcut.” (Matei 25:40)",p0)};
+}
+
+
+/* ---------- friends: walk alongside and encourage (server: push.kardiaapp.ro) ---------- */
+function me(){let m=store.get("md_uid",null);if(!m||!/^[a-z0-9]{16}$/.test(m.id||"")){const r=n=>[...crypto.getRandomValues(new Uint8Array(n))].map(x=>"abcdefghijklmnopqrstuvwxyz0123456789"[x%36]).join("");m={id:r(16),key:r(32)};store.set("md_uid",m)}return m}
+let fr=store.get("md_friends",{active:false,list:[],inbox:[],seen:0}),frCode="",frOpen="",frT=null,frLast=0;
+let pendCode=store.get("md_pendcode","");
+{const hm=location.hash.match(/^#f-([A-Za-z0-9]{6})$/);if(hm){pendCode=hm[1].toUpperCase();store.set("md_pendcode",pendCode);try{history.replaceState(null,"","#azi")}catch(e){}}}
+const CHEERS=["Mă rog pentru tine 🙏","Ține-o tot așa! 💪","Nu renunța, sunt cu tine ❤️","Mă bucur să te văd perseverând","Azi e o zi nouă. Hai împreună!"];
+const frSave=()=>store.set("md_friends",fr);
+async function fApi(path,extra){const m=me();const r=await fetch(PUSH_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id,key:m.key,name:(prof&&prof.name)||"",...extra})});
+  const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok){const e=new Error(j.error||"net");e.code=j.error;throw e}return j}
+async function friendSync(force){
+  if(!fr.active&&!pendCode)return;if(!force&&Date.now()-frLast<20000)return;frLast=Date.now();
+  try{
+    const t=log[TODAY]||{};
+    await fApi("/f/status",{streak:streak(),today:{d:TODAY,c:!!t.c,b:!!t.b,r:!!t.r,s:!!t.s},areas:areas()});
+    const j=await fApi("/f/list",{});fr.list=j.friends||[];fr.inbox=j.inbox||[];frSave();
+    if(tab==="eu")renderFriends();else if(tab==="azi")renderAzi();
+  }catch(e){}
+}
+function friendSoon(){clearTimeout(frT);frT=setTimeout(()=>friendSync(true),1500)}
+document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible")friendSync(false)});
+const frMsg=t=>{const el=$("frMsg");if(el)el.textContent=t};
+const frErr=e=>e&&e.code==="code"?"Codul nu e valid sau a expirat. Cere prietenului un cod nou.":e&&e.code==="self"?"Acesta e chiar codul tău. Trimite-l unui prieten.":e&&e.code==="limit"?"Ai trimis multe încurajări azi acestui prieten. Încearcă mâine.":e&&e.code==="full"?"Ai atins numărul maxim de prieteni.":"Nu s-a putut conecta. Verifică internetul și încearcă din nou.";
+function ago(ts){if(!ts)return"";const d=new Date(ts),k=ymd(d);if(k===TODAY)return"azi, "+d.toLocaleTimeString("ro-RO",{hour:"2-digit",minute:"2-digit"});const y=new Date(today);y.setDate(y.getDate()-1);if(k===ymd(y))return"ieri";return dm(k)}
+function renderFriends(){
+  const el=$("frCard");if(!el)return;
+  const DOT={c:["var(--accent)","Mișcare"],b:["var(--rest)","Biblie"],r:["var(--pray)","Rugăciune"],s:["var(--serve)","Slujire"]};
+  const list=fr.list||[],inbox=(fr.inbox||[]).slice(0,10);
+  let h=`<p class="muted">Însoțiți-vă unii pe alții: vedeți cât de constant e fiecare și vă trimiteți încurajări. Prietenii văd doar numele tău, seria de zile și ce ai făcut azi. Notițele și listele tale rămân private.</p>`;
+  if(!(prof&&prof.name))h+=`<p class="muted"><b>Completează-ți numele în profil</b>, ca prietenii să te recunoască.</p>`;
+  if(pendCode)h+=`<div class="frinv"><b>Ai primit o invitație de la un prieten</b><span class="muted">Cod: ${esc(pendCode)}</span><div class="opts"><button class="btn small" id="frAcc">Acceptă</button><button class="ghost" id="frIgn">Ignoră</button></div></div>`;
+  if(list.length)h+=`<ul class="frlist">${list.map(f=>{const t=f.today&&f.today.d===TODAY?f.today:null,ar=(f.areas||[]).filter(a=>DOT[a]);
+    return`<li><div class="frrow"><div style="min-width:0"><b>${esc(f.name)}</b><small>${f.streak?`${f.streak} ${f.streak===1?"zi":"zile"} la rând`:"La început de drum"} · ${f.at?"activ "+ago(f.at):"încă nu a intrat"}</small>
+      <div class="frdots">${ar.map(a=>`<span class="${t&&t[a]?"on":""}" style="--c:${DOT[a][0]}" title="${DOT[a][1]}">${DOT[a][1]}</span>`).join("")}</div></div>
+      <button class="ghost" data-fopen="${f.id}">${frOpen===f.id?"Închide":"Încurajează"}</button></div>
+      ${frOpen===f.id?`<div class="frcheer"><div class="chipset">${CHEERS.map((c,i)=>`<button class="chip sm" data-fsend="${f.id}" data-ci="${i}">${c}</button>`).join("")}</div>
+        <div class="two"><input class="inp" id="frTxt" maxlength="140" placeholder="Sau scrie tu un mesaj…" aria-label="Mesaj de încurajare"><button class="btn small" data-fsend="${f.id}">Trimite</button></div>
+        <button class="mini" data-frem="${f.id}" style="align-self:flex-start">Elimină prietenul</button></div>`:""}</li>`}).join("")}</ul>`;
+  h+=`<div class="opts"><button class="btn small" id="frInv">Invită un prieten</button></div>`;
+  if(frCode)h+=`<div class="frinv"><span class="muted">Codul tău de invitație (valabil 7 zile):</span><div class="frcode">${frCode}</div>
+    <div class="opts"><button class="btn small" id="frShare">Trimite invitația</button><button class="ghost" id="frCopy">Copiază</button></div></div>`;
+  h+=`<div class="field"><span class="flabel">Ai un cod de la un prieten?</span><div class="two"><input class="inp" id="frIn" maxlength="6" autocapitalize="characters" placeholder="ex.: K7M2QX" aria-label="Codul prietenului"><button class="ghost" id="frGo">Conectează</button></div></div>
+    <span class="muted" id="frMsg" role="status"></span>`;
+  if(inbox.length)h+=`<div class="field"><span class="flabel">Încurajări primite</span><ul class="plist">${inbox.map(m=>`<li><span>${esc(m.msg)}<small>${esc(m.name)} · ${ago(m.ts)}</small></span></li>`).join("")}</ul></div>`;
+  el.innerHTML=h;
+  if(inbox.length){const mx=Math.max(...inbox.map(m=>m.ts));if(mx>(fr.seen||0)){fr.seen=mx;frSave()}}
+  const invText=c=>`Hai să ne însoțim în Kardia, pentru trup și suflet! Deschide linkul ca să ne conectăm: https://kardiaapp.ro/#f-${c} (sau introdu codul ${c} în Eu → Prieteni).`;
+  $("frInv").onclick=async()=>{frMsg("Se creează codul…");try{const j=await fApi("/f/invite",{});frCode=j.code;fr.active=true;frSave();renderFriends();friendSync(true)}catch(e){frMsg(frErr(e))}};
+  if($("frShare"))$("frShare").onclick=async()=>{const t=invText(frCode);try{if(navigator.share){await navigator.share({text:t});return}}catch(e){if(e&&e.name==="AbortError")return}try{await navigator.clipboard.writeText(t);frMsg("Invitația a fost copiată. Lipește-o într-un mesaj.")}catch(e){frMsg("Trimite-i prietenului codul "+frCode+".")}};
+  if($("frCopy"))$("frCopy").onclick=async()=>{try{await navigator.clipboard.writeText(invText(frCode));frMsg("Invitația a fost copiată.")}catch(e){frMsg("Codul tău: "+frCode)}};
+  const accept=async code=>{code=String(code||"").trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(code)){frMsg("Codul are 6 caractere.");return}
+    frMsg("Se conectează…");try{const j=await fApi("/f/accept",{code});fr.active=true;pendCode="";store.set("md_pendcode","");frSave();await friendSync(true);frMsg(`Gata! Acum te însoțești cu ${j.name||"prietenul tău"}.`)}catch(e){frMsg(frErr(e))}};
+  $("frGo").onclick=()=>accept($("frIn").value);$("frIn").onkeydown=e=>{if(e.key==="Enter")accept($("frIn").value)};
+  if($("frAcc"))$("frAcc").onclick=()=>accept(pendCode);
+  if($("frIgn"))$("frIgn").onclick=()=>{pendCode="";store.set("md_pendcode","");renderFriends()};
+  el.querySelectorAll("[data-fopen]").forEach(b=>b.onclick=()=>{frOpen=frOpen===b.dataset.fopen?"":b.dataset.fopen;renderFriends()});
+  el.querySelectorAll("[data-fsend]").forEach(b=>b.onclick=async()=>{const to=b.dataset.fsend,msg=b.dataset.ci!==undefined?CHEERS[+b.dataset.ci]:($("frTxt").value||"").trim();
+    if(!msg){$("frTxt").focus();return}frMsg("Se trimite…");try{await fApi("/f/cheer",{to,msg});frOpen="";renderFriends();frMsg("Încurajarea a fost trimisă. ❤️")}catch(e){frMsg(frErr(e))}});
+  el.querySelectorAll("[data-frem]").forEach(b=>b.onclick=async()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Sigur? Apasă din nou";return}
+    try{await fApi("/f/remove",{fid:b.dataset.frem});fr.list=fr.list.filter(f=>f.id!==b.dataset.frem);frOpen="";frSave();renderFriends()}catch(e){frMsg(frErr(e))}});
 }
 
 /* ---------- suggestions ---------- */
@@ -1681,6 +1759,8 @@ function confetti(){
 }
 document.addEventListener("touchstart",()=>{},{passive:true});
 checkBadges();
+if(fr.active)setTimeout(()=>friendSync(true),1200);
+if(pushOn)setTimeout(pushSync,2000);
 $("resetAsk").onclick=()=>{$("resetAsk").hidden=true;$("resetConfirm").hidden=false};
 $("resetNo").onclick=()=>{$("resetConfirm").hidden=true;$("resetAsk").hidden=false};
 $("resetYes").onclick=()=>{
