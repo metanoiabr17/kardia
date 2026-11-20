@@ -171,6 +171,8 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.tabs-in[data-n="8"] .tab{font-size:.6rem;letter-spacing:-.01em}
+.tabs-in[data-n="8"] .tab svg{width:20px;height:20px}
 .gbox{background:var(--bg)}
 .gbox>summary{flex-wrap:wrap;gap:4px 10px}
 .gname{font-family:var(--display);font-weight:800;font-size:1.05rem}
@@ -424,13 +426,18 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <div id="serveBody" style="display:flex;flex-direction:column;gap:22px"></div>
   </section>
 
+  <!-- GRUP MIC -->
+  <section class="view" id="v-grup" hidden>
+    <div><h1>Grup mic</h1><p class="date">Studiu și rugăciune, împreună.</p></div>
+    <div class="card" id="gCard"></div>
+  </section>
+
   <!-- EU -->
   <section class="view" id="v-eu" hidden>
     <div class="top"><div><h1 id="euName">Profilul tău</h1><p class="date" id="euGoal"></p></div><button class="ghost" id="editProf">Editează</button></div>
     <div class="card" id="recCard"></div>
     <button class="btn" id="instOpen" hidden>Instalează aplicația pe telefon</button>
     <section id="frSec"><h2>Prieteni</h2><div class="card" id="frCard"></div></section>
-    <section id="gSec"><h2>Grupuri mici</h2><div class="card" id="gCard"></div></section>
     <section><h2>Mementouri</h2><div class="card" id="remCard"></div></section>
     <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
     <section id="shSec"><h2>Împărtășește progresul</h2>
@@ -735,18 +742,19 @@ const TABS=[
  ["biblie","Biblie",'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M12 7v5M10 9h4"/>'],
  ["rug","Rugăciune",'<path d="M12 3v7M9 6h6"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/>'],
  ["serve","Slujire",'<path d="M12 20s-6.5-4.2-6.5-9.2A3.6 3.6 0 0 1 12 8.6a3.6 3.6 0 0 1 6.5 2.2c0 5-6.5 9.2-6.5 9.2z"/><path d="M3 21h5l3-2M21 21h-5l-3-2"/>'],
+ ["grup","Grup",'<circle cx="9" cy="8" r="3"/><circle cx="17" cy="9" r="2.5"/><path d="M3 20c0-3.5 2.7-6 6-6s6 2.5 6 6M15 14.5c3 0 6 2 6 5.5"/>'],
  ["eu","Eu",'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>']
 ];
 let tab="azi";{const h=location.hash.slice(1);if(TABS.some(t=>t[0]===h))tab=h}
 
 /* ---------- areas the user chose to use (from the profile) ---------- */
-const AREAK=["c","b","r","p","s"],TAB_AREA={corp:"c",biblie:"b",rug:"r",post:"p",serve:"s"};
+const AREAK=["c","b","r","p","s","g"],TAB_AREA={corp:"c",biblie:"b",rug:"r",post:"p",serve:"s",grup:"g"};
 const areas=()=>{const a=typeof prof!=="undefined"&&prof&&Array.isArray(prof.areas)&&prof.areas.length?prof.areas:[0,1,2,3];return a.map(i=>AREAK[i])};
 const useA=k=>areas().includes(k);
 const dayKeys=()=>["c","b","r"].filter(useA);
-const tabOn=t=>!TAB_AREA[t]||useA(TAB_AREA[t]);
+const tabOn=t=>!TAB_AREA[t]||useA(TAB_AREA[t])||(t==="grup"&&typeof grp!=="undefined"&&(grp.active||!!gPend));
 const isFull=x=>{const dk=dayKeys();return!!x&&dk.length>0&&dk.every(k=>x[k])};
-function applyTabs(){let n=0;document.querySelectorAll(".tab").forEach(b=>{const on=tabOn(b.dataset.t);b.hidden=!on;if(on)n++});$("tabs").style.gridTemplateColumns=`repeat(${n},1fr)`}
+function applyTabs(){let n=0;document.querySelectorAll(".tab").forEach(b=>{const on=tabOn(b.dataset.t);b.hidden=!on;if(on)n++});$("tabs").style.gridTemplateColumns=`repeat(${n},1fr)`;$("tabs").dataset.n=n}
 function showTab(t){if(t!=="start"&&!tabOn(t))t="azi";tab=t;applyTabs();
   TABS.forEach(([k])=>{$("v-"+k).hidden=k!==t});$("v-start").hidden=t!=="start";document.body.classList.toggle("onb",t==="start");
   document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-current",b.dataset.t===t?"page":"false"));
@@ -758,7 +766,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>showTab(b.dataset.t))
 window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h!==tab&&TABS.some(t=>t[0]===h))showTab(h)});
 
 function render(){
-  ({azi:renderAzi,corp:renderCorp,post:renderPost,biblie:renderBiblie,rug:renderRug,eu:renderEu,serve:renderServe,start:renderStart})[tab]();
+  ({azi:renderAzi,corp:renderCorp,post:renderPost,biblie:renderBiblie,rug:renderRug,eu:renderEu,serve:renderServe,grup:renderGroups,start:renderStart})[tab]();
 }
 
 function renderAzi(){
@@ -786,7 +794,7 @@ function renderAzi(){
   $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
   const unread=(fr.inbox||[]).filter(m=>m.ts>(fr.seen||0));
   if(unread.length){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">Încurajare</div><div style="font-weight:600">${esc(unread[0].name)}: „${esc(unread[0].msg)}”</div></div><button class="btn small" id="frSee" style="background:var(--serve)">Vezi</button></div></div>`);$("frSee").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
-  const toGroups=()=>{showTab("eu");setTimeout(()=>{const e=$("gSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)};
+  const toGroups=()=>showTab("grup");
   (grp.list||[]).slice().reverse().forEach(g=>{const d=gDay(g),nr=g.reqs.filter(r=>!r.mine&&r.ts>(grp.seen||0)).length;if(!(d&&d.txt)&&!nr&&!g.meet)return;
     $("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">${esc(g.name)}</div><div style="font-weight:600">${d&&d.txt?"Citim împreună: "+d.txt:g.meet?esc(g.meet):""}</div>${nr?`<small class="muted">${nr} ${nr===1?"motiv nou":"motive noi"} de rugăciune</small>`:""}</div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`)});
   if(gPend)$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag s">Grup mic</div><div style="font-weight:600">Ai fost invitat într-un grup de studiu și rugăciune.</div></div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`);
@@ -1198,7 +1206,7 @@ let prof=store.get("md_profile",null);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const Q=[
  {k:"name",t:"text",l:"Cum te cheamă?",ph:"Prenumele tău"},
- {k:"areas",t:"many",l:"Pentru ce vrei să folosești Kardia?",sub:"Alege una sau mai multe. Poți schimba oricând din profil.",o:["Mișcare","Citirea Bibliei","Rugăciune","Post","Slujirea altora"]},
+ {k:"areas",t:"many",l:"Pentru ce vrei să folosești Kardia?",sub:"Alege una sau mai multe. Poți schimba oricând din profil.",o:["Mișcare","Citirea Bibliei","Rugăciune","Post","Slujirea altora","Grup mic de studiu"]},
  {k:"age",t:"one",l:"Vârsta",o:["sub 18","18–29","30–44","45–59","60+"]},
  {k:"hw",when:d=>d.areas.includes(0),t:"nums",l:"Înălțime și greutate (opțional)",f:[["height","Înălțime (cm)"],["weight","Greutate (kg)"]]},
  {k:"goal",when:d=>d.areas.includes(0),t:"one",l:"Ce vrei în primul rând?",o:["Să slăbesc","Condiție și energie","Forță","Să mă mențin"]},
@@ -1217,7 +1225,7 @@ const LIM=[
  ["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar","Plank cu atingerea umerilor","Alpinist"],
  ["Dips pe scaun","Flotări cu brațe apropiate","Plank cu atingerea umerilor"]
 ];
-const DEF={name:"",areas:[0,1,2,3,4],pmode:0,age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
+const DEF={name:"",areas:[0,1,2,3,4,5],pmode:0,age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
 let draft=null,editMode=false;
 function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));if(prof)draft.pmode=prayMode==="free"?2:pray.free?0:1;showTab("start")}
 function renderStart(){
@@ -1310,7 +1318,7 @@ function spark(pts){
 function renderEu(){
   const G=Q.find(q=>q.k==="goal").o;
   $("euName").textContent=prof&&prof.name?prof.name:"Profilul tău";
-  const AN={c:"mișcare",b:"citirea Bibliei",r:"rugăciune",p:"post",s:"slujirea altora"},al=areas().map(k=>AN[k]);
+  const AN={c:"mișcare",b:"citirea Bibliei",r:"rugăciune",p:"post",s:"slujirea altora",g:"grupul mic"},al=areas().map(k=>AN[k]);
   $("euGoal").textContent=!prof?"Nu ai încă un profil.":useA("c")?"Obiectiv: "+G[prof.goal].toLowerCase():"Folosești Kardia pentru "+(al.length>1?al.slice(0,-1).join(", ")+" și "+al[al.length-1]:al[0]);
   $("progSec").hidden=!useA("c");$("avoidSec").hidden=!useA("c");
   $("editProf").textContent=prof?"Editează":"Creează";
@@ -1332,7 +1340,6 @@ function renderEu(){
   renderMedals();
   renderRem();
   renderFriends();
-  renderGroups();
   renderShare();
   renderSuggest();
   let ch="";
@@ -1576,7 +1583,7 @@ async function friendSync(force){
     await fApi("/f/status",{streak:streak(),today:{d:TODAY,c:!!t.c,b:!!t.b,r:!!t.r,s:!!t.s},areas:areas()});
     if(fr.active||pendCode){const j=await fApi("/f/list",{});fr.list=j.friends||[];fr.inbox=j.inbox||[];frSave()}
     if(grp.active){const g=await fApi("/g/list",{});grp.list=g.groups||[];grpSave()}
-    if(tab==="eu"){renderFriends();renderGroups()}else if(tab==="azi")renderAzi();
+    if(tab==="eu")renderFriends();else if(tab==="grup")renderGroups();else if(tab==="azi")renderAzi();
   }catch(e){}
 }
 function friendSoon(){clearTimeout(frT);frT=setTimeout(()=>friendSync(true),1500)}
@@ -1627,7 +1634,10 @@ function renderFriends(){
 let grp=store.get("md_groups",{active:false,list:[],seen:0}),gPend=store.get("md_gpend",""),gOpen=store.get("md_gopen",""),gNew="";
 {const hm=location.hash.match(/^#g-([A-Za-z0-9]{6})$/);if(hm){gPend=hm[1].toUpperCase();store.set("md_gpend",gPend);try{history.replaceState(null,"","#azi")}catch(e){}}}
 const grpSave=()=>store.set("md_groups",grp);
-async function groupsSync(){if(!grp.active)return;try{const j=await fApi("/g/list",{});grp.list=j.groups||[];grpSave();if(tab==="eu")renderGroups();else if(tab==="azi")renderAzi()}catch(e){}}
+window.addEventListener("hashchange",()=>{const g=location.hash.match(/^#g-([A-Za-z0-9]{6})$/),f=location.hash.match(/^#f-([A-Za-z0-9]{6})$/);
+  if(g){gPend=g[1].toUpperCase();store.set("md_gpend",gPend);showTab("grup")}
+  else if(f){pendCode=f[1].toUpperCase();store.set("md_pendcode",pendCode);showTab("eu")}});
+async function groupsSync(){if(!grp.active)return;try{const j=await fApi("/g/list",{});grp.list=j.groups||[];grpSave();applyTabs();if(tab==="grup")renderGroups();else if(tab==="azi")renderAzi()}catch(e){}}
 function gDay(g){if(!g.plan||!PLANS[g.plan.k])return null;const P=PLANS[g.plan.k],i=Math.floor((Date.parse(TODAY+"T12:00:00")-Date.parse(g.plan.start+"T12:00:00"))/864e5);return{P,i,txt:i<0?"":i>=P.days.length?"":P.days[i]}}
 let gLast="";const gMsg=t=>{gLast=t;const el=$("gMsg");if(el)el.textContent=t};
 const gErr=e=>e&&e.code==="code"?"Codul nu e valid. Verifică-l cu cel care te-a invitat.":e&&e.code==="max"?"Poți face parte din cel mult 5 grupuri.":e&&e.code==="full"?"Grupul e plin (30 de membri).":e&&e.code==="limit"?"Ai adăugat multe motive azi. Încearcă mâine.":"Nu s-a putut conecta. Verifică internetul și încearcă din nou.";
@@ -1681,7 +1691,7 @@ function renderGroups(){
   el.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Șterge?";return}gCall("/g/reqdel",{gid:b.dataset.gdel,rid:b.dataset.rid}).catch(()=>{})});
   el.querySelectorAll("[data-gleave]").forEach(b=>b.onclick=async()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Sigur? Apasă din nou";return}try{await gCall("/g/leave",{gid:b.dataset.gleave},"Ai părăsit grupul.")}catch(e){}});
   el.querySelectorAll("[data-gshare]").forEach(b=>b.onclick=async()=>{const g=list.find(x=>x.gid===b.dataset.gshare);if(!g)return;
-    const t=`Te invit în grupul „${g.name}” din Kardia, ca să citim și să ne rugăm împreună: https://kardiaapp.ro/#g-${g.code} (sau introdu codul ${g.code} în Eu → Grupuri mici).`;
+    const t=`Te invit în grupul „${g.name}” din Kardia, ca să citim și să ne rugăm împreună: https://kardiaapp.ro/#g-${g.code} (sau introdu codul ${g.code} în secțiunea Grup).`;
     try{if(navigator.share){await navigator.share({text:t});return}}catch(e){if(e&&e.name==="AbortError")return}
     try{await navigator.clipboard.writeText(t);gMsg("Invitația a fost copiată. Lipește-o într-un mesaj.")}catch(e){gMsg("Trimite membrilor codul "+g.code+".")}});
 }
