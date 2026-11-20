@@ -746,7 +746,7 @@ function renderAzi(){
   const cards=[
    {t:"c",tag:"Mișcare",title:corpMode==="run"?runTitle():corpMode==="mil"&&mn?`Program militar · săpt. ${mn[0]} · ${MIL[mn[1]].k}`:`Rutina zilnică · ${LEVELS[level].name}`,done:has(TODAY,"c"),go:"corp"},
    {t:"b",tag:"Biblie",title:bi<0?"Plan terminat. Alege altul.":`Ziua ${bi+1}: ${bd[bi]}`,done:has(TODAY,"b"),go:"biblie"},
-   {t:"r",tag:"Rugăciune",title:prayMode==="free"?(plist.filter(x=>!x.ans).length?`Rugăciune liberă · ${plist.filter(x=>!x.ans).length} în listă`:"Rugăciune liberă"):pray.free?`Rugăciune cu ${prayPassage()}`:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
+   {t:"r",tag:"Rugăciune",title:prayMode==="free"?(plist.length?`Rugăciune liberă · ${plist.length} ${plist.length===1?"motiv":"motive"} de rugăciune`:"Rugăciune liberă"):pray.free?`Rugăciune cu ${prayPassage()}`:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
    {t:"p",tag:"Post",title:fast.active?`În desfășurare: ${FASTS.find(f=>f.id===fast.active.id).n}`:"Opțional. Alege când ești pregătit.",done:false,go:"post"}
   ];
   $("today").style.cssText="display:flex;flex-direction:column;gap:10px";
@@ -1032,25 +1032,21 @@ let prayMode=store.get("md_praymode","guided");
 let plist=store.get("md_plist",[]);
 const savePl=()=>store.set("md_plist",plist);
 function renderFreePray(){
-  const open=plist.filter(x=>!x.ans),ans=plist.filter(x=>x.ans).sort((a,b)=>a.ans<b.ans?1:-1),done=has(TODAY,"r");
+  const done=has(TODAY,"r");
   $("rugFree").innerHTML=`
   <div class="card"><div class="tag r">Rugăciune liberă</div>
-    <p>Roagă-te cu cuvintele tale, cât și cum simți. Kardia doar îți ține evidența și lista de rugăciune.</p>
+    <p>Roagă-te cu cuvintele tale, cât și cum simți. Kardia doar îți ține evidența și motivele de rugăciune.</p>
     <p class="muted">Dacă vrei un punct de plecare: ${prayPassage()}.</p>${readLinks(prayPassage())}
     ${done?'<div class="donebox">Te-ai rugat azi. ✓</div>':'<button class="btn pray" id="frDone">M-am rugat azi</button>'}
   </div>
-  <section><h2>Lista mea de rugăciune</h2><div class="card">
-    <div class="two"><input class="inp" id="plIn" maxlength="120" placeholder="Pentru cine sau pentru ce te rogi?" aria-label="Subiect de rugăciune"><button class="btn small pray" id="plAdd">Adaugă</button></div>
-    ${open.length?`<ul class="plist">${open.map(x=>`<li><span>${esc(x.t)}<small>din ${dm(x.d)}</small></span><div class="opts"><button class="mini" data-pans="${x.id}">Am primit răspuns</button><button class="mini" data-pdel="${x.id}" aria-label="Șterge">✕</button></div></li>`).join("")}</ul>`:'<p class="muted">Lista e goală. Adaugă oameni și situații pe care vrei să le porți în rugăciune.</p>'}
-  </div></section>
-  ${ans.length?`<section><h2>Rugăciuni cu răspuns · ${ans.length}</h2><div class="card"><ul class="plist ans">${ans.map(x=>`<li><span>${esc(x.t)}<small>răspuns pe ${dm(x.ans)}</small></span><button class="mini" data-pundo="${x.id}">Anulează</button></li>`).join("")}</ul>
-    <p class="muted">Recitește-le când ai nevoie de încurajare. Ele arată credincioșia lui Dumnezeu.</p></div></section>`:""}`;
+  <section><h2>Motive de rugăciune</h2><div class="card">
+    <div class="two"><input class="inp" id="plIn" maxlength="120" placeholder="Pentru cine sau pentru ce te rogi?" aria-label="Motiv de rugăciune"><button class="btn small pray" id="plAdd">Adaugă</button></div>
+    ${plist.length?`<ul class="plist">${plist.map(x=>`<li><span>${esc(x.t)}<small>din ${dm(x.d)}</small></span><button class="mini" data-pdel="${x.id}" aria-label="Șterge">✕</button></li>`).join("")}</ul>`:'<p class="muted">Adaugă oameni și situații pe care vrei să le porți în rugăciune.</p>'}
+  </div></section>`;
   if($("frDone"))$("frDone").onclick=()=>{const p0=points();mark("r");renderFreePray();celebrate("Rugăciune notată","Pacea Lui să te însoțească azi.",p0)};
   const add=()=>{const t=$("plIn").value.trim();if(!t){$("plIn").focus();return}plist.push({id:Date.now().toString(36),t:t.slice(0,120),d:TODAY});savePl();renderFreePray();$("plIn").focus()};
   $("plAdd").onclick=add;$("plIn").onkeydown=e=>{if(e.key==="Enter")add()};
-  $("rugFree").querySelectorAll("[data-pans]").forEach(b=>b.onclick=()=>{const x=plist.find(y=>y.id===b.dataset.pans);if(x){const p0=points();x.ans=TODAY;savePl();renderFreePray();const nb=checkBadges();if(nb.length)celebrate("Dumnezeu a răspuns","Slavă Lui pentru credincioșia Sa!",p0)}});
   $("rugFree").querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Șterge?";return}plist=plist.filter(y=>y.id!==b.dataset.pdel);savePl();renderFreePray()});
-  $("rugFree").querySelectorAll("[data-pundo]").forEach(b=>b.onclick=()=>{const x=plist.find(y=>y.id===b.dataset.pundo);if(x){delete x.ans;savePl();renderFreePray()}});
 }
 
 function renderLearn(){
@@ -1578,8 +1574,6 @@ const BADGES=[
  B("r30","Statornic în rugăciune","30","r","Rugăciune","30 de zile de rugăciune",()=>cntK("r"),30),
  B("r100","Rugăciune neîncetată","100","r","Rugăciune","100 de zile de rugăciune",()=>cntK("r"),100),
  B("learn","Ucenic","8","r","Rugăciune","Toate lecțiile de rugăciune",()=>nL("md_lessons"),8),
- B("ans1","Primul răspuns","✓","r","Rugăciune","Prima rugăciune cu răspuns notată",()=>plist.filter(x=>x.ans).length,1),
- B("ans10","Martor al credincioșiei","10","r","Rugăciune","10 rugăciuni cu răspuns",()=>plist.filter(x=>x.ans).length,10),
 
  B("fast","Primul post","P","p","Post și progres","Un post încheiat",()=>fast.count,1),
  B("fast5","Statornic în post","5","p","Post și progres","5 posturi încheiate",()=>fast.count,5),
