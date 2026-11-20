@@ -291,7 +291,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <section>
       <h2>Săptămâna ta</h2>
       <div class="week" id="week"></div>
-      <div class="legend"><span><i style="background:var(--accent)"></i>Mișcare</span><span><i style="background:var(--rest)"></i>Biblie</span><span><i style="background:var(--pray)"></i>Rugăciune</span></div>
+      <div class="legend" id="legend"></div>
     </section>
     <section style="display:flex;flex-direction:column;gap:10px">
       <h2 style="margin:0">Pentru azi</h2>
@@ -405,7 +405,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
       </div>
     </section>
     <section><h2 id="medalsT">Medalii</h2><div class="medals" id="medals"></div></section>
-    <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0">Progresul fizic</h2>
+    <section id="progSec" style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0">Progresul fizic</h2>
       <div class="card">
         <p class="muted">Notează-ți măsurătorile o dată la două săptămâni, în aceeași zi și la aceeași oră. Completezi doar ce vrei.</p>
         <div class="two">
@@ -420,7 +420,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
       <div id="charts" style="display:flex;flex-direction:column;gap:10px"></div>
       <details id="progHistD"><summary>Toate măsurătorile</summary><ul class="days" id="progHist"></ul></details>
     </section>
-    <section><h2>Exerciții pe care le eviți</h2>
+    <section id="avoidSec"><h2>Exerciții pe care le eviți</h2>
       <div class="card">
         <div class="chipset" id="avoidChips"></div>
         <div class="two"><select class="inp" id="avSel" aria-label="Alege un exercițiu"></select><button class="ghost" id="avAdd">Adaugă</button></div>
@@ -696,7 +696,16 @@ const TABS=[
  ["eu","Eu",'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>']
 ];
 let tab="azi";{const h=location.hash.slice(1);if(TABS.some(t=>t[0]===h))tab=h}
-function showTab(t){tab=t;
+
+/* ---------- areas the user chose to use (from the profile) ---------- */
+const AREAK=["c","b","r","p"],TAB_AREA={corp:"c",biblie:"b",rug:"r",post:"p"};
+const areas=()=>{const a=typeof prof!=="undefined"&&prof&&Array.isArray(prof.areas)&&prof.areas.length?prof.areas:[0,1,2,3];return a.map(i=>AREAK[i])};
+const useA=k=>areas().includes(k);
+const dayKeys=()=>["c","b","r"].filter(useA);
+const tabOn=t=>!TAB_AREA[t]||useA(TAB_AREA[t]);
+const isFull=x=>{const dk=dayKeys();return!!x&&dk.length>0&&dk.every(k=>x[k])};
+function applyTabs(){let n=0;document.querySelectorAll(".tab").forEach(b=>{const on=tabOn(b.dataset.t);b.hidden=!on;if(on)n++});$("tabs").style.gridTemplateColumns=`repeat(${n},1fr)`}
+function showTab(t){if(t!=="start"&&!tabOn(t))t="azi";tab=t;applyTabs();
   TABS.forEach(([k])=>{$("v-"+k).hidden=k!==t});$("v-start").hidden=t!=="start";document.body.classList.toggle("onb",t==="start");
   document.querySelectorAll(".tab").forEach(b=>b.setAttribute("aria-current",b.dataset.t===t?"page":"false"));
   try{history.replaceState(null,"","#"+t)}catch(e){}
@@ -716,8 +725,10 @@ function renderAzi(){
   $("streak").textContent=streak();
   const labels=["D","L","M","M","J","V","S"],mon=new Date(today);mon.setDate(today.getDate()-((today.getDay()+6)%7));
   let h="";for(let i=0;i<7;i++){const d=new Date(mon);d.setDate(mon.getDate()+i);const k=ymd(d);
-    h+=`<div class="day ${k===TODAY?"today":""}">${labels[d.getDay()]}<div class="dots"><i class="${has(k,"c")?"c":""}"></i><i class="${has(k,"b")?"b":""}"></i><i class="${has(k,"r")?"r":""}"></i></div></div>`}
+    h+=`<div class="day ${k===TODAY?"today":""}">${labels[d.getDay()]}<div class="dots">${dayKeys().map(x=>`<i class="${has(k,x)?x:""}"></i>`).join("")}</div></div>`}
   $("week").innerHTML=h;
+  const LG={c:["var(--accent)","Mișcare"],b:["var(--rest)","Biblie"],r:["var(--pray)","Rugăciune"]};
+  $("legend").innerHTML=dayKeys().map(k=>`<span><i style="background:${LG[k][0]}"></i>${LG[k][1]}</span>`).join("");
   const bi=bNext(),bd=PLANS[bible.plan].days;
   const mn=milNext();
   const cards=[
@@ -727,7 +738,7 @@ function renderAzi(){
    {t:"p",tag:"Post",title:fast.active?`În desfășurare: ${FASTS.find(f=>f.id===fast.active.id).n}`:"Opțional. Alege când ești pregătit.",done:false,go:"post"}
   ];
   $("today").style.cssText="display:flex;flex-direction:column;gap:10px";
-  $("today").innerHTML=cards.map(c=>`<div class="card"><div class="row"><div><div class="tag ${c.t}">${c.tag}</div><div style="font-weight:600">${c.title}</div></div>
+  $("today").innerHTML=cards.filter(c=>useA(c.t)).map(c=>`<div class="card"><div class="row"><div><div class="tag ${c.t}">${c.tag}</div><div style="font-weight:600">${c.title}</div></div>
     ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest);color:#141414"':c.t==="p"?'style="background:var(--muted)"':""}>Deschide</button>`}</div></div>`).join("");
   $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
   if(!prof){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag c">Profil</div><div style="font-weight:600">Răspunde la câteva întrebări ca să-ți potrivim programul.</div></div><button class="btn small" id="mkProf">Începe</button></div></div>`);
@@ -1108,16 +1119,17 @@ let prof=store.get("md_profile",null);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const Q=[
  {k:"name",t:"text",l:"Cum te cheamă?",ph:"Prenumele tău"},
+ {k:"areas",t:"many",l:"Pentru ce vrei să folosești Kardia?",sub:"Alege una sau mai multe. Poți schimba oricând din profil.",o:["Mișcare","Citirea Bibliei","Rugăciune","Post"]},
  {k:"age",t:"one",l:"Vârsta",o:["sub 18","18–29","30–44","45–59","60+"]},
- {k:"hw",t:"nums",l:"Înălțime și greutate (opțional)",f:[["height","Înălțime (cm)"],["weight","Greutate (kg)"]]},
- {k:"goal",t:"one",l:"Ce vrei în primul rând?",o:["Să slăbesc","Condiție și energie","Forță","Să mă mențin"]},
- {k:"activity",t:"one",l:"Cât de activ ești acum?",o:["Aproape deloc","1–2 zile pe săptămână","3+ zile pe săptămână"]},
- {k:"pushups",t:"one",l:"Câte flotări normale poți face acum?",o:["Niciuna","1–5","6–15","Peste 15"]},
- {k:"limits",t:"many",l:"Ai dureri sau probleme la…",o:["Genunchi","Spate","Încheieturi","Umeri","Nimic"],none:4},
- {k:"minutes",t:"one",l:"Cât timp ai pentru mișcare într-o zi obișnuită?",o:["5 minute","10 minute","15+ minute"]},
- {k:"health",t:"many",l:"Ai vreuna dintre acestea? (contează pentru post)",o:["Diabet","Probleme cu tensiunea","Sarcină sau alăptare","Medicamente zilnice","Nimic din acestea"],none:4},
- {k:"bplan",t:"one",l:"Cu ce plan de citire vrei să începi?",o:[...Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>PLANS[k].n),"Îmi fac propriul plan"]},
- {k:"pmin",t:"one",l:"Cât timp vrei să te rogi zilnic?",o:["5 minute","10 minute","20 minute","Aleg eu"]}
+ {k:"hw",when:d=>d.areas.includes(0),t:"nums",l:"Înălțime și greutate (opțional)",f:[["height","Înălțime (cm)"],["weight","Greutate (kg)"]]},
+ {k:"goal",when:d=>d.areas.includes(0),t:"one",l:"Ce vrei în primul rând?",o:["Să slăbesc","Condiție și energie","Forță","Să mă mențin"]},
+ {k:"activity",when:d=>d.areas.includes(0),t:"one",l:"Cât de activ ești acum?",o:["Aproape deloc","1–2 zile pe săptămână","3+ zile pe săptămână"]},
+ {k:"pushups",when:d=>d.areas.includes(0),t:"one",l:"Câte flotări normale poți face acum?",o:["Niciuna","1–5","6–15","Peste 15"]},
+ {k:"limits",when:d=>d.areas.includes(0),t:"many",l:"Ai dureri sau probleme la…",o:["Genunchi","Spate","Încheieturi","Umeri","Nimic"],none:4},
+ {k:"minutes",when:d=>d.areas.includes(0),t:"one",l:"Cât timp ai pentru mișcare într-o zi obișnuită?",o:["5 minute","10 minute","15+ minute"]},
+ {k:"health",when:d=>d.areas.includes(3),t:"many",l:"Ai vreuna dintre acestea? (contează pentru post)",o:["Diabet","Probleme cu tensiunea","Sarcină sau alăptare","Medicamente zilnice","Nimic din acestea"],none:4},
+ {k:"bplan",when:d=>d.areas.includes(1),t:"one",l:"Cu ce plan de citire vrei să începi?",o:[...Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>PLANS[k].n),"Îmi fac propriul plan"]},
+ {k:"pmin",when:d=>d.areas.includes(2),t:"one",l:"Cât timp vrei să te rogi zilnic?",o:["5 minute","10 minute","20 minute","Aleg eu"]}
 ];
 const LIM=[
  ["Genuflexiuni cu săritură","Fandări alternative","Fandări","Patinatorul","Burpees","Burpee militar","Jumping jacks"],
@@ -1125,7 +1137,7 @@ const LIM=[
  ["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar","Plank cu atingerea umerilor","Alpinist"],
  ["Dips pe scaun","Flotări cu brațe apropiate","Plank cu atingerea umerilor"]
 ];
-const DEF={name:"",age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
+const DEF={name:"",areas:[0,1,2,3],age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
 let draft=null,editMode=false;
 function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));showTab("start")}
 function renderStart(){
@@ -1147,7 +1159,8 @@ function renderStart(){
   $("startTitle").textContent=editMode?"Profilul tău":"Bun venit";
   $("startSub").textContent=editMode?"Schimbă ce vrei. Programul se va potrivi după noile răspunsuri.":"Câteva întrebări ca să-ți potrivim programul. Răspunsurile rămân doar pe telefonul tău.";
   let h="";
-  Q.forEach(q=>{h+=`<div class="field"><span class="flabel">${q.l}</span>`;
+  if(!Array.isArray(draft.areas)||!draft.areas.length)draft.areas=[0,1,2,3];
+  Q.forEach(q=>{if(q.when&&!q.when(draft))return;h+=`<div class="field"><span class="flabel">${q.l}</span>${q.sub?`<span class="muted" style="margin-top:-4px">${q.sub}</span>`:""}`;
     if(q.t==="text")h+=`<input class="inp" id="f-${q.k}" value="${esc(draft[q.k]||"")}" placeholder="${q.ph}" maxlength="30" autocomplete="given-name">`;
     else if(q.t==="nums")h+=`<div class="two">${q.f.map(([k,l])=>`<input class="inp" id="f-${k}" type="number" inputmode="decimal" min="0" step="0.1" placeholder="${l}" aria-label="${l}" value="${esc(draft[k]||"")}">`).join("")}</div>`;
     else h+=`<div class="chipset">${q.o.map((o,i)=>`<button type="button" class="chip" data-q="${q.k}" data-i="${i}" aria-pressed="${q.t==="one"?draft[q.k]===i:(draft[q.k]||[]).includes(i)}">${o}</button>`).join("")}</div>`;
@@ -1160,7 +1173,8 @@ function renderStart(){
   $("onb").querySelectorAll(".chip").forEach(b=>b.onclick=()=>{
     const q=Q.find(x=>x.k===b.dataset.q),i=+b.dataset.i;
     if(q.t==="one")draft[q.k]=i;
-    else{let a=draft[q.k]||[];if(i===q.none)a=[i];else{a=a.filter(x=>x!==q.none);a=a.includes(i)?a.filter(x=>x!==i):[...a,i];if(!a.length)a=[q.none]}draft[q.k]=a}
+    else{let a=draft[q.k]||[];if(i===q.none)a=[i];else{a=a.filter(x=>x!==q.none);a=a.includes(i)?a.filter(x=>x!==i):[...a,i];if(!a.length)a=q.none!==undefined?[q.none]:[i]}draft[q.k]=a}
+    if(q.k==="areas"){const y=window.scrollY;renderStart();window.scrollTo(0,y);return}
     if(q.k==="pmin"){$("f-pbox").hidden=i!==3;if(i===3)$("f-pcustom").focus()}
     b.parentNode.querySelectorAll(".chip").forEach(c=>{const j=+c.dataset.i;c.setAttribute("aria-pressed",q.t==="one"?draft[q.k]===j:draft[q.k].includes(j))})});
   if($("cancelProf"))$("cancelProf").onclick=()=>{draft=null;showTab("eu")};
@@ -1169,6 +1183,9 @@ function renderStart(){
 $("onb").onsubmit=e=>{e.preventDefault();saveProfile()};
 function saveProfile(){
   const p=draft;p.name=String(p.name||"").trim().slice(0,30);
+  if(!Array.isArray(p.areas)||!p.areas.length)p.areas=[0,1,2,3];
+  const A=k=>p.areas.includes(AREAK.indexOf(k));
+  if(A("c")){
   const lv=["usor","mediu","greu"],fit=p.activity+(p.pushups>=2?1:0);
   level=lv[Math.min(fit<=0?0:fit<=2?1:2,p.minutes)];store.set("md_level",level);
   corpMode=(p.goal===1||p.goal===2)&&p.activity>=1&&p.minutes>=1?"mil":"daily";store.set("md_corpmode",corpMode);
@@ -1178,13 +1195,15 @@ function saveProfile(){
   if(p.pushups===0)["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar"].forEach(n=>add.add(n));
   if(p.pushups===1)add.add("Flotări cu brațe apropiate");
   avoid=[...new Set([...avoid,...add])];store.set("md_avoid",avoid);
-  const PR=Object.keys(PLANS).filter(k=>!PLANS[k].custom),ownPlan=p.bplan>=PR.length;
+  }
+  ["c","b","r"].forEach(k=>{if(rem[k])rem[k].on=A(k)});store.set("md_rem",rem);
+  const PR=Object.keys(PLANS).filter(k=>!PLANS[k].custom),ownPlan=A("b")&&p.bplan>=PR.length;
   if(!ownPlan)bible.plan=PR[p.bplan];store.set("md_bible",bible);
   pray.min=p.pmin===3?Math.min(180,Math.max(1,parseInt(p.pcustom,10)||15)):([5,10,20][p.pmin]||10);if(p.pmin===3)p.pcustom=pray.min;store.set("md_pray",pray);
   p.fastRestrict=p.age===0||!p.health.includes(4);
   const w=parseFloat(String(p.weight||"").replace(",","."));
   if(w>0)addProg({w});
-  p.created=p.created||TODAY;prof=p;store.set("md_profile",p);draft=null;
+  p.created=p.created||TODAY;prof=p;store.set("md_profile",p);draft=null;if(pushOn)pushSync();
   if(ownPlan){showTab("biblie");$("buildD").open=true;setTimeout(()=>$("buildD").scrollIntoView({behavior:"smooth",block:"start"}),50)}else showTab("eu");
 }
 
@@ -1208,21 +1227,24 @@ function spark(pts){
 function renderEu(){
   const G=Q.find(q=>q.k==="goal").o;
   $("euName").textContent=prof&&prof.name?prof.name:"Profilul tău";
-  $("euGoal").textContent=prof?"Obiectiv: "+G[prof.goal].toLowerCase():"Nu ai încă un profil.";
+  const AN={c:"mișcare",b:"citirea Bibliei",r:"rugăciune",p:"post"},al=areas().map(k=>AN[k]);
+  $("euGoal").textContent=!prof?"Nu ai încă un profil.":useA("c")?"Obiectiv: "+G[prof.goal].toLowerCase():"Folosești Kardia pentru "+(al.length>1?al.slice(0,-1).join(", ")+" și "+al[al.length-1]:al[0]);
+  $("progSec").hidden=!useA("c");$("avoidSec").hidden=!useA("c");
   $("editProf").textContent=prof?"Editează":"Creează";
   $("editProf").onclick=()=>openProfile(!!prof);
   if(prof){
     const mn=milNext();
     const rows=[["Mișcare",corpMode==="run"?runTitle():corpMode==="mil"?`Program militar · săptămâna ${mn?mn[0]:8}`:`Rutina zilnică · ${LEVELS[level].name}`],
-      ["Citire",PLANS[bible.plan].n],["Rugăciune",pray.min+" minute pe zi"],["Post",prof.fastRestrict?"Doar variantele blânde":"Toate variantele, cu grijă"]];
-    const L=Q.find(q=>q.k==="limits").o,lim=(prof.limits||[]).filter(i=>i!==4).map(i=>L[i].toLowerCase());
+      ["Citire",PLANS[bible.plan].n],["Rugăciune",pray.min+" minute pe zi"],["Post",prof.fastRestrict?"Doar variantele blânde":"Toate variantele, cu grijă"]].filter(([a])=>useA({Mișcare:"c",Citire:"b",Rugăciune:"r",Post:"p"}[a]));
+    const L=Q.find(q=>q.k==="limits").o,lim=useA("c")?(prof.limits||[]).filter(i=>i!==4).map(i=>L[i].toLowerCase()):[];
     $("recCard").innerHTML=`<div class="tag c">Programul tău</div><dl class="reclist" style="margin:0">${rows.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
       ${lim.length?`<p class="muted">Ai menționat probleme la ${lim.length>1?lim.slice(0,-1).join(", ")+" și "+lim[lim.length-1]:lim[0]}. Am scos exercițiile care solicită aceste zone. Dacă durerea continuă, cere sfatul unui medic sau kinetoterapeut.</p>`:""}
-      <p class="muted">Poți schimba oricând nivelul și programul din secțiunea Mișcare.</p>`;
+      <p class="muted">${useA("c")?"Poți schimba oricând nivelul și programul din secțiunea Mișcare.":"Poți adăuga oricând alte secțiuni din „Editează”."}</p>`;
   }else $("recCard").innerHTML=`<p>Completează profilul ca să primești un program potrivit pentru tine.</p><button class="btn small" id="mk2">Creează profilul</button>`;
   if($("mk2"))$("mk2").onclick=()=>openProfile(false);
   const cnt=k=>Object.values(log).filter(x=>x[k]).length;
-  $("stats").innerHTML=[[cnt("c"),"zile cu mișcare"],[Object.keys(mil.done).length,"sesiuni militare"],[Object.keys(run.done).length,"sesiuni de alergare"],[cnt("b"),"zile de citire"],[cnt("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],[streak(),"zile active la rând"],[Object.values(steps).reduce((a,b)=>a+b,0).toLocaleString("ro-RO"),"pași notați"]]
+  $("stats").innerHTML=[["c",cnt("c"),"zile cu mișcare"],["c",Object.keys(mil.done).length,"sesiuni militare"],["c",Object.keys(run.done).length,"sesiuni de alergare"],["b",cnt("b"),"zile de citire"],["r",cnt("r"),"zile de rugăciune"],["p",fast.count,"posturi încheiate"],["",streak(),"zile active la rând"],["c",Object.values(steps).reduce((a,b)=>a+b,0).toLocaleString("ro-RO"),"pași notați"]]
+    .filter(([a])=>!a||useA(a)).map(([,v,l])=>[v,l])
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
   renderRem();
@@ -1273,15 +1295,15 @@ function downloadIcs(){
   $("remMsg").textContent=isIOS?"Apasă „Adaugă tot” în fereastra care se deschide.":"Deschide fișierul descărcat cu aplicația de calendar.";
 }
 function renderRem(){
-  const any=REM.some(([k])=>rem[k].on);
+  const any=REM.some(([k])=>useA(k)&&rem[k].on);
   $("remCard").innerHTML=`<p class="muted">Alege orele, iar Kardia îți trimite în fiecare zi o notificare, chiar dacă aplicația e închisă.</p>
-    <div class="remlist">${REM.map(([k,n])=>`<div class="remrow"><label class="toggle"><input type="checkbox" data-ron="${k}" ${rem[k].on?"checked":""}> ${n}</label><input class="inp remt" type="time" id="rt-${k}" data-rt="${k}" value="${rem[k].t}" aria-label="Ora pentru ${n}" ${rem[k].on?"":"disabled"}></div>`).join("")}</div>
+    <div class="remlist">${REM.filter(([k])=>useA(k)).map(([k,n])=>`<div class="remrow"><label class="toggle"><input type="checkbox" data-ron="${k}" ${rem[k].on?"checked":""}> ${n}</label><input class="inp remt" type="time" id="rt-${k}" data-rt="${k}" value="${rem[k].t}" aria-label="Ora pentru ${n}" ${rem[k].on?"":"disabled"}></div>`).join("")}</div>
     ${pushOn?`<div class="pushon"><span class="ok">✓ Notificări active</span><div class="opts"><button class="ghost" id="pTest">Trimite un test</button><button class="ghost" id="pOff">Oprește</button></div></div>`
             :`<button class="btn" id="pOn" ${any?"":"disabled"}>Activează notificările</button>`}
     <span class="muted" id="pMsg" role="status"></span>
     ${isIOS?'<p class="muted">Pe iPhone, notificările merg doar cu aplicația instalată pe ecranul principal (iOS 16.4 sau mai nou).</p>':""}
     <details class="calalt"><summary>Altă variantă: mementouri în calendar</summary><div class="pickin">
-      ${isAndroid?`<div class="opts">${REM.filter(([k])=>rem[k].on).map(([k,n])=>`<a class="blink gcal" href="${gcalUrl(k)}" target="_blank" rel="noopener">${n} · ${rem[k].t}</a>`).join("")||'<span class="muted">Activează cel puțin un memento.</span>'}</div>
+      ${isAndroid?`<div class="opts">${REM.filter(([k])=>useA(k)&&rem[k].on).map(([k,n])=>`<a class="blink gcal" href="${gcalUrl(k)}" target="_blank" rel="noopener">${n} · ${rem[k].t}</a>`).join("")||'<span class="muted">Activează cel puțin un memento.</span>'}</div>
         <span class="muted">Apasă pe fiecare, apoi pe „Salvează” în Google Calendar.</span>
         <button class="ghost" id="remIcs" ${any?"":"disabled"}>Sau descarcă pentru alt calendar</button>`
        :`<button class="ghost" id="remIcs" ${any?"":"disabled"}>${isIOS?"Adaugă în Calendarul iPhone":"Adaugă în calendar"}</button>`}
@@ -1397,7 +1419,10 @@ function shBuildText(){
   return`Progresul meu în Kardia:\n${parts.join("\n")}\n\nHai să ne motivăm împreună! Aplicația e gratuită: https://kardiaapp.ro`;
 }
 async function renderShare(){
-  $("shMode").innerHTML=[["all","Tot"],["spirit","Spiritual"],["sport","Sportiv"]].map(([k,l])=>`<button type="button" class="chip" data-shm="${k}" aria-pressed="${shMode===k}">${l}</button>`).join("");
+  const hasSp=useA("b")||useA("r")||useA("p"),hasC=useA("c"),SM=[["all","Tot"],["spirit","Spiritual"],["sport","Sportiv"]].filter(([k])=>k==="all"?hasSp&&hasC:k==="spirit"?hasSp:hasC);
+  if(!SM.some(([k])=>k===shMode))shMode=SM[0][0];
+  $("shMode").hidden=SM.length<2;
+  $("shMode").innerHTML=SM.map(([k,l])=>`<button type="button" class="chip" data-shm="${k}" aria-pressed="${shMode===k}">${l}</button>`).join("");
   $("shMode").querySelectorAll("[data-shm]").forEach(b=>b.onclick=()=>{shMode=b.dataset.shm;store.set("md_shmode",shMode);renderShare()});
   try{await Promise.all(["900 64px Archivo","800 40px Archivo","500 25px Inter"].map(f=>document.fonts.load(f)))}catch(e){}
   const cv=$("shCanvas");drawCard(cv);shText=shBuildText();shFile=null;
@@ -1445,15 +1470,15 @@ $("sgSend").onclick=async()=>{
 /* ---------- points, levels, medals, celebration ---------- */
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 const cntK=k=>Object.values(log).filter(x=>x[k]).length;
-function points(){let p=0;for(const d in log){const x=log[d];p+=(x.c?10:0)+(x.b?10:0)+(x.r?10:0)+(x.c&&x.b&&x.r?10:0)}
+function points(){let p=0;for(const d in log){const x=log[d];p+=(x.c?10:0)+(x.b?10:0)+(x.r?10:0)+(dayKeys().length>1&&isFull(x)?10:0)}
   return p+Object.keys(mil.done).length*5+fast.count*20}
 const LVT=[0,50,150,300,500,800,1200,1700,2300],LVN=["Început","Pas cu pas","Statornic","Perseverent","Luptător","Atlet","Veteran","Neclintit","Biruitor"];
 function lvl(p){let i=0;while(i<LVT.length-1&&p>=LVT[i+1])i++;return{i,name:LVN[i],cur:LVT[i],next:LVT[i+1]||null}}
 function bestStreak(){const ds=Object.keys(log).filter(d=>Object.keys(log[d]).length).sort();let b=0,c=0,prev=null;
   for(const d of ds){const t=Date.parse(d+"T12:00:00");c=prev&&Math.round((t-prev)/864e5)===1?c+1:1;prev=t;b=Math.max(b,c)}return b}
-function bestFull(){const ds=Object.keys(log).filter(d=>{const x=log[d];return x.c&&x.b&&x.r}).sort();let b=0,c=0,prev=null;
+function bestFull(){const ds=Object.keys(log).filter(d=>isFull(log[d])).sort();let b=0,c=0,prev=null;
   for(const d of ds){const t=Date.parse(d+"T12:00:00");c=prev&&Math.round((t-prev)/864e5)===1?c+1:1;prev=t;b=Math.max(b,c)}return b}
-const fullDays=()=>Object.values(log).filter(x=>x.c&&x.b&&x.r).length;
+const fullDays=()=>Object.values(log).filter(isFull).length;
 const totSteps=()=>Object.values(steps).reduce((a,v)=>a+v,0);
 const planDone=k=>PLANS[k]&&Object.keys(bible.done[k]||{}).length>=PLANS[k].days.length;
 const milWeek=()=>{for(let w=1;w<=8;w++)if([0,1,2].every(s=>mil.done[w+"-"+s]))return true;return false};
@@ -1519,20 +1544,21 @@ const fmtN=v=>v>=10000?Math.round(v/1000).toLocaleString("ro-RO")+"k":v.toLocale
 const medalHTML=(b,on)=>{let pr="";if(!on){const [c,t]=b.pr();if(t>1)pr=`<div class="mp"><i style="width:${(c/t*100).toFixed(0)}%"></i></div><small>${fmtN(c)} / ${fmtN(t)}</small>`}
   return`<div class="medal ${on?"":"locked"}"><div class="disc ${b.t}">${b.g}</div><b>${b.n}</b><span>${b.d}</span>${pr}</div>`};
 function renderMedals(){checkBadges();const got=store.get("md_badges",{});
-  $("medalsT").textContent=`Medalii · ${BADGES.filter(b=>got[b.id]).length} din ${BADGES.length}`;
-  const cats=[...new Set(BADGES.map(b=>b.cat))];
-  $("medals").innerHTML=cats.map(c=>{const list=BADGES.filter(b=>b.cat===c),n=list.filter(b=>got[b.id]).length;
+  const CA={"Mișcare":()=>useA("c"),"Cuvântul":()=>useA("b"),"Rugăciune":()=>useA("r"),"Post și progres":()=>useA("p")||useA("c")},VB=BADGES.filter(b=>!CA[b.cat]||CA[b.cat]());
+  $("medalsT").textContent=`Medalii · ${VB.filter(b=>got[b.id]).length} din ${VB.length}`;
+  const cats=[...new Set(VB.map(b=>b.cat))];
+  $("medals").innerHTML=cats.map(c=>{const list=VB.filter(b=>b.cat===c),n=list.filter(b=>got[b.id]).length;
     return`<div class="mcat"><span>${c}</span><span>${n} din ${list.length}</span></div>`+list.sort((x,y)=>(!!got[y.id])-(!!got[x.id])).map(b=>medalHTML(b,!!got[b.id])).join("")}).join("")}
 function renderHero(){
-  const done=["c","b","r"].filter(k=>has(TODAY,k)).length,hr=new Date().getHours();
+  const dk=dayKeys(),nA=dk.length,done=dk.filter(k=>has(TODAY,k)).length,hr=new Date().getHours();
   const gr=(hr<11?"Bună dimineața":hr<18?"Bună ziua":"Bună seara")+(prof&&prof.name?", "+esc(prof.name):"");
-  const msg=done===3?"Ziua e completă. Bravo!":done===0?"Începe cu un pas mic.":`${done} din 3 azi. Mai ai puțin.`;
+  const msg=nA&&done===nA?(nA>1?"Ziua e completă. Bravo!":"Gata pentru azi. Bravo!"):done===0?"Începe cu un pas mic.":`${done} din ${nA} azi. Mai ai puțin.`;
   const p=points(),L=lvl(p),pct=L.next?(p-L.cur)/(L.next-L.cur)*100:100;
-  const R=[[46,"c","#E5303F"],[35,"b","#FFD66B"],[24,"r","#B994FF"]];
-  $("hero").innerHTML=`<div class="rings"><svg viewBox="0 0 112 112" role="img" aria-label="${done} din 3 activități azi">${R.map(([r,k,col])=>{const C=(2*Math.PI*r).toFixed(1);
+  const RAD=[46,35,24],COL={c:"#E5303F",b:"#FFD66B",r:"#B994FF"},NM={c:"Mișcare",b:"Biblie",r:"Rugăciune"},R=dk.map((k,i)=>[RAD[i],k,COL[k]]);
+  $("hero").innerHTML=`<div class="rings"><svg viewBox="0 0 112 112" role="img" aria-label="${done} din ${nA} activități azi">${R.map(([r,k,col])=>{const C=(2*Math.PI*r).toFixed(1);
     return`<circle class="tr" cx="56" cy="56" r="${r}"/><circle class="a" cx="56" cy="56" r="${r}" stroke="${col}" stroke-dasharray="${C}" stroke-dashoffset="${C}" data-to="${has(TODAY,k)?0:C}"/>`}).join("")}</svg></div>
     <div style="min-width:0"><p>${gr}</p><h3>${msg}</h3>
-    <div class="hlegend"><span><i style="background:#E5303F"></i>Mișcare</span><span><i style="background:#FFD66B"></i>Biblie</span><span><i style="background:#B994FF"></i>Rugăciune</span></div>
+    <div class="hlegend">${dk.map(k=>`<span><i style="background:${COL[k]}"></i>${NM[k]}</span>`).join("")}</div>
     <div class="lvrow"><span>Nivel ${L.i+1} · ${L.name}</span><span>${p}${L.next?" / "+L.next:""} p</span></div><div class="xp"><i data-w="${pct.toFixed(1)}"></i></div></div>`;
   requestAnimationFrame(()=>requestAnimationFrame(()=>{$("hero").querySelectorAll("[data-to]").forEach(c=>c.style.strokeDashoffset=c.dataset.to);
     const x=$("hero").querySelector("[data-w]");x.style.width=x.dataset.w+"%"}));
