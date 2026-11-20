@@ -171,6 +171,8 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.pts .pers{font-size:1.2rem;line-height:1.35;color:var(--ink);font-weight:800;text-wrap:balance}
+.pts .ptsm{font-family:var(--body);font-size:.9rem;font-weight:600;color:var(--accent);margin-top:8px}
 .wnote{max-width:340px;font-size:.92rem;color:var(--ink);opacity:.85;line-height:1.5}
 .plist{list-style:none;margin:0;padding:0}
 .plist li{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
@@ -838,7 +840,7 @@ function renderBiblie(){
     $("readCard").innerHTML=`<div class="tag b">${esc(P.n)} · ziua ${i+1} din ${P.days.length}</div><div class="bar2"><i style="width:${(Object.keys(D).length/P.days.length*100).toFixed(1)}%"></i></div><div class="reading">${P.days[i]}</div>${readLinks(P.days[i])}
       ${readToday?`<p class="muted">Azi ai citit ${P.days[readTodayIdx()]}. Poți merge mai departe, dacă vrei.</p>`:""}
       <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest);color:#141414">Am citit</button><button class="ghost" id="readPray">${readToday?"Roagă-te cu citirea de azi":"Roagă-te cu acest text"}</button></div>`;
-    $("readOk").onclick=()=>{const p0=points();D[i]=TODAY;store.set("md_bible",bible);mark("b");renderBiblie();celebrate("Citire bifată",`Ziua ${i+1}: ${P.days[i]}`,p0)};
+    $("readOk").onclick=()=>{const p0=points();D[i]=TODAY;store.set("md_bible",bible);mark("b");renderBiblie();celebrate("Încă o zi în Cuvânt",`Ziua ${i+1}: ${P.days[i]}`,p0)};
     $("readPray").onclick=()=>{pray.src="plan";store.set("md_pray",pray);showTab("rug")};
   }
   $("allSum").textContent=`Toate zilele (${Object.keys(D).length}/${P.days.length})`;
@@ -955,7 +957,7 @@ function renderRun(){
   $("corpRun").querySelectorAll("[data-goal]").forEach(b=>b.onclick=()=>{stepGoal=+b.dataset.goal;store.set("md_stepgoal",stepGoal);renderRun()});
   $("stSave").onclick=()=>{const v=parseInt($("stIn").value,10);if(!(v>=0)){$("stIn").focus();return}
     const was=(steps[TODAY]||0)>=stepGoal,p0=points();steps[TODAY]=Math.min(v,100000);store.set("md_steps",steps);
-    if(steps[TODAY]>=stepGoal&&!was){mark("c");renderRun();celebrate("Obiectiv de pași atins",`${steps[TODAY].toLocaleString("ro-RO")} pași azi. Bravo!`,p0)}else renderRun()};
+    if(steps[TODAY]>=stepGoal&&!was){mark("c");renderRun();celebrate("Obiectiv de pași atins",`${steps[TODAY].toLocaleString("ro-RO")} pași azi. Pas cu pas, zi de zi.`,p0)}else renderRun()};
   $("startRun").onclick=()=>{
     try{speechSynthesis&&speechSynthesis.speak(new SpeechSynthesisUtterance(" "))}catch(e){}
     const st=[{kind:"time",tone:"rest",phase:"Încălzire",title:"Mers alert",cue:"Mergi alert 5 minute ca să te încălzești.",dur:300,say:"Începem. Mers alert, cinci minute."}];
@@ -1044,7 +1046,7 @@ function renderFreePray(){
     <div class="two"><input class="inp" id="plIn" maxlength="120" placeholder="Pentru cine sau pentru ce te rogi?" aria-label="Motiv de rugăciune"><button class="btn small pray" id="plAdd">Adaugă</button></div>
     ${plist.length?`<ul class="plist">${plist.map(x=>`<li><span>${esc(x.t)}<small>din ${dm(x.d)}</small></span><button class="mini" data-pdel="${x.id}" aria-label="Șterge">✕</button></li>`).join("")}</ul>`:'<p class="muted">Adaugă oameni și situații pe care vrei să le porți în rugăciune.</p>'}
   </div></section>`;
-  if($("frDone"))$("frDone").onclick=()=>{const p0=points();mark("r");renderFreePray();celebrate("Rugăciune notată","Pacea Lui să te însoțească azi.",p0)};
+  if($("frDone"))$("frDone").onclick=()=>{const p0=points();mark("r");renderFreePray();celebrate("Încă o zi cu Dumnezeu","Pacea Lui să te însoțească azi.",p0)};
   const add=()=>{const t=$("plIn").value.trim();if(!t){$("plIn").focus();return}plist.push({id:Date.now().toString(36),t:t.slice(0,120),d:TODAY});savePl();renderFreePray();$("plIn").focus()};
   $("plAdd").onclick=add;$("plIn").onkeydown=e=>{if(e.key==="Enter")add()};
   $("rugFree").querySelectorAll("[data-pdel]").forEach(b=>b.onclick=()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Șterge?";return}plist=plist.filter(y=>y.id!==b.dataset.pdel);savePl();renderFreePray()});
@@ -1131,7 +1133,7 @@ $("startDaily").onclick=()=>{
   const L=LEVELS[level],plan=buildPlan(level),st=[{kind:"time",tone:"rest",phase:"Pregătește-te",title:"Urmează: "+plan[0].n,cue:plan[0].c,dur:5,count:"1/"+plan.length}];
   plan.forEach((e,i)=>{st.push({kind:"time",tone:"work",phase:"Lucru",title:e.n,cue:e.c,dur:L.work,count:`${i+1}/${plan.length}`,next:plan[i+1]?`După: <b>${plan[i+1].n}</b>`:"Ultimul exercițiu"});
     if(i<plan.length-1)st.push({kind:"rest",tone:"rest",phase:"Pauză",title:"Urmează: "+plan[i+1].n,cue:plan[i+1].c,dur:L.rest,count:`${i+2}/${plan.length}`})});
-  runStart(st,()=>{const p0=points();mark("c");celebrate("Antrenament terminat","Ai pus corpul în mișcare azi.",p0)});
+  runStart(st,()=>{const p0=points();mark("c");celebrate("Încă o zi în mișcare","Ai fost constant și azi. Trupul tău îți mulțumește.",p0)});
 };
 $("startMil").onclick=()=>{
   const [w,s]=milSel,S=MIL[s],R2=milRounds(w),st=[
@@ -1149,7 +1151,7 @@ $("startMil").onclick=()=>{
   runStart(st,()=>{const p0=points();mil.done[w+"-"+s]=TODAY;store.set("md_mil",mil);mark("c");milSel=milNext()||milSel;
     celebrate(`Săptămâna ${w} · ${S.k} gata`,"Disciplină de soldat. Mâine odihnă sau marș.",p0)});
 };
-$("startPray").onclick=()=>runStart(prayerSteps(),()=>{const p0=points();mark("r");celebrate("Rugăciune încheiată","Pacea Lui să te însoțească azi.",p0)});
+$("startPray").onclick=()=>runStart(prayerSteps(),()=>{const p0=points();mark("r");celebrate("Încă o zi cu Dumnezeu","Pacea Lui să te însoțească azi.",p0)});
 
 $("copy").onclick=()=>{const url=location.href.split("#")[0],m=$("copied");
   const show=t=>{m.hidden=false;m.textContent=t};
@@ -1597,7 +1599,7 @@ function renderMedals(){checkBadges();const got=store.get("md_badges",{});
 function renderHero(){
   const dk=dayKeys(),nA=dk.length,done=dk.filter(k=>has(TODAY,k)).length,hr=new Date().getHours();
   const gr=(hr<11?"Bună dimineața":hr<18?"Bună ziua":"Bună seara")+(prof&&prof.name?", "+esc(prof.name):"");
-  const msg=nA&&done===nA?(nA>1?"Ziua e completă. Bravo!":"Gata pentru azi. Bravo!"):done===0?"Începe cu un pas mic.":`${done} din ${nA} azi. Mai ai puțin.`;
+  const msg=nA&&done===nA?"Încă o zi în care ai rămas statornic.":done===0?"Începe cu un pas mic.":`${done} din ${nA} azi. Contează fiecare pas.`;
   const p=points(),L=lvl(p),pct=L.next?(p-L.cur)/(L.next-L.cur)*100:100;
   const RAD=[46,35,24],COL={c:"#E5303F",b:"#FFD66B",r:"#B994FF"},NM={c:"Mișcare",b:"Biblie",r:"Rugăciune"},R=dk.map((k,i)=>[RAD[i],k,COL[k]]);
   $("hero").innerHTML=`<div class="rings"><svg viewBox="0 0 112 112" role="img" aria-label="${done} din ${nA} activități azi">${R.map(([r,k,col])=>{const C=(2*Math.PI*r).toFixed(1);
@@ -1608,10 +1610,15 @@ function renderHero(){
   requestAnimationFrame(()=>requestAnimationFrame(()=>{$("hero").querySelectorAll("[data-to]").forEach(c=>c.style.strokeDashoffset=c.dataset.to);
     const x=$("hero").querySelector("[data-w]");x.style.width=x.dataset.w+"%"}));
 }
+function persLine(){const n=streak(),b=bestStreak();
+  if(n<=1)return b>1?"Ai reluat drumul. Contează că te-ai întors.":"Primul pas. Orice drum lung începe așa.";
+  if(n<7)return`${n} zile la rând. Rămâi statornic.`;
+  if(n<30)return`${n} zile la rând. Perseverența ta se vede.`;
+  return`${n} zile la rând. Credincios în lucrurile mici, zi de zi.`}
 function celebrate(title,sub,p0){
   const p1=points(),L0=lvl(p0),L1=lvl(p1),nb=checkBadges();
   $("celeT").textContent=title;$("celeS").textContent=sub;
-  $("celeP").textContent=p1>p0?`+${p1-p0} puncte`:"Bravo, încă o dată!";
+  $("celeP").innerHTML=`<div class="pers">${persLine()}</div>${p1>p0?`<div class="ptsm">+${p1-p0} puncte</div>`:""}`;
   $("celeL").innerHTML=L1.i>L0.i?`<div class="lvup">Ai urcat la nivelul ${L1.i+1}: ${L1.name}</div>`:"";
   $("celeB").style.gridTemplateColumns=`repeat(${Math.min(nb.length,3)||1},1fr)`;
   $("celeB").innerHTML=nb.length?nb.map(b=>medalHTML(b,true)).join(""):"";
