@@ -171,6 +171,8 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.gedit{background:transparent;border-style:dashed}
+.gedit>summary{font-size:.9rem;color:var(--muted)}
 .tabs-in[data-n="8"] .tab{font-size:.6rem;letter-spacing:-.01em}
 .tabs-in[data-n="8"] .tab svg{width:20px;height:20px}
 .gbox{background:var(--bg)}
@@ -795,8 +797,8 @@ function renderAzi(){
   const unread=(fr.inbox||[]).filter(m=>m.ts>(fr.seen||0));
   if(unread.length){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">Încurajare</div><div style="font-weight:600">${esc(unread[0].name)}: „${esc(unread[0].msg)}”</div></div><button class="btn small" id="frSee" style="background:var(--serve)">Vezi</button></div></div>`);$("frSee").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
   const toGroups=()=>showTab("grup");
-  (grp.list||[]).slice().reverse().forEach(g=>{const d=gDay(g),nr=g.reqs.filter(r=>!r.mine&&r.ts>(grp.seen||0)).length;if(!(d&&d.txt)&&!nr&&!g.meet)return;
-    $("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">${esc(g.name)}</div><div style="font-weight:600">${d&&d.txt?"Citim împreună: "+d.txt:g.meet?esc(g.meet):""}</div>${nr?`<small class="muted">${nr} ${nr===1?"motiv nou":"motive noi"} de rugăciune</small>`:""}</div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`)});
+  (grp.list||[]).slice().reverse().forEach(g=>{const d=gDay(g),nr=g.reqs.filter(r=>!r.mine&&r.ts>(grp.seen||0)).length;const act=d&&d.status==="active";if(!act&&!nr&&!g.meet)return;
+    $("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">${esc(g.name)}</div><div style="font-weight:600">${act?"Citim împreună: "+esc(d.kind==="book"?d.title+(d.txt?" · "+d.txt:""):d.txt):g.meet?esc(g.meet):""}</div>${nr?`<small class="muted">${nr} ${nr===1?"motiv nou":"motive noi"} de rugăciune</small>`:""}</div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`)});
   if(gPend)$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag s">Grup mic</div><div style="font-weight:600">Ai fost invitat într-un grup de studiu și rugăciune.</div></div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`);
   $("today").querySelectorAll("[data-gto]").forEach(b=>b.onclick=toGroups);
   if(pendCode){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag s">Invitație</div><div style="font-weight:600">Un prieten vrea să vă însoțiți în Kardia.</div></div><button class="btn small" id="frSeeInv" style="background:var(--serve)">Vezi</button></div></div>`);$("frSeeInv").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
@@ -1638,7 +1640,58 @@ window.addEventListener("hashchange",()=>{const g=location.hash.match(/^#g-([A-Z
   if(g){gPend=g[1].toUpperCase();store.set("md_gpend",gPend);showTab("grup")}
   else if(f){pendCode=f[1].toUpperCase();store.set("md_pendcode",pendCode);showTab("eu")}});
 async function groupsSync(){if(!grp.active)return;try{const j=await fApi("/g/list",{});grp.list=j.groups||[];grpSave();applyTabs();if(tab==="grup")renderGroups();else if(tab==="azi")renderAzi()}catch(e){}}
-function gDay(g){if(!g.plan||!PLANS[g.plan.k])return null;const P=PLANS[g.plan.k],i=Math.floor((Date.parse(TODAY+"T12:00:00")-Date.parse(g.plan.start+"T12:00:00"))/864e5);return{P,i,txt:i<0?"":i>=P.days.length?"":P.days[i]}}
+function gDay(g){
+  const pl=g.plan;if(!pl)return null;
+  const type=pl.type||"plan",sig=pl.sig||pl.start||"x";
+  if(type==="bible")return{kind:"bible",status:"active",title:"Pasaj din Biblie",txt:pl.text,note:pl.note,tag:sig,bible:true};
+  if(type==="book")return{kind:"book",status:"active",title:pl.title,author:pl.author,txt:pl.part,note:pl.note,tag:sig,bible:false};
+  let name,days;
+  if(type==="custom"){const bk=BIB.filter(x=>(pl.books||[]).includes(x[0]));if(!bk.length)return null;days=splitPlan(bk,planDays(bk,pl.cpd||1));name=pl.name||"Planul grupului"}
+  else{const P=PLANS[pl.k];if(!P)return null;days=P.days;name=P.n}
+  const i=Math.floor((Date.parse(TODAY+"T12:00:00")-Date.parse(pl.start+"T12:00:00"))/864e5);
+  return{kind:"plan",status:i<0?"future":i>=days.length?"done":"active",title:`${name} · ziua ${i+1} din ${days.length}`,name,txt:i>=0&&i<days.length?days[i]:"",start:pl.start,tag:sig+":"+i,bible:true};
+}
+let gEd={},gEdOpen="";
+function gEdState(gid){return gEd[gid]||(gEd[gid]={mode:"plan",books:[],cpd:2,name:"",bk:"Ioan",from:"",to:"",note:"",title:"",author:"",part:"",bnote:""})}
+function gEditorHTML(g){
+  const E=gEdState(g.gid),gid=g.gid;
+  const modes=[["plan","Plan gata făcut"],["custom","Planul nostru"],["bible","Un pasaj"],["book","Altă carte"]];
+  let h=`<details class="gedit" data-ged="${gid}" ${gEdOpen===gid?"open":""}><summary>Schimbă ce citim</summary><div class="pickin">
+    <div class="chipset">${modes.map(([k,l])=>`<button type="button" class="chip sm" data-gmode="${gid}" data-m="${k}" aria-pressed="${E.mode===k}">${l}</button>`).join("")}</div>`;
+  if(E.mode==="plan")h+=`<div class="two"><select class="inp" id="gPlan-${gid}" aria-label="Plan de citire">${Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>`<option value="${k}">${esc(PLANS[k].n)}</option>`).join("")}</select><button class="btn small" data-gset="${gid}">Începe de azi</button></div>`;
+  if(E.mode==="custom"){const sel=new Set(E.books),bk=BIB.filter(x=>sel.has(x[0])),N=bk.reduce((a,x)=>a+x[1],0),D=bk.length?planDays(bk,E.cpd):0;
+    h+=`<input class="inp" data-gf="${gid}" data-k="name" maxlength="50" placeholder="Numele planului (ex.: Epistolele lui Pavel)" value="${esc(E.name)}" aria-label="Numele planului">
+    <div class="chipset">${QUICK.map(([n,l],i)=>`<button type="button" class="chip sm q" data-gq="${gid}" data-i="${i}" aria-pressed="${l.every(x=>sel.has(x[0]))}">${n}</button>`).join("")}</div>
+    <details class="gpick" data-gpk="${gid}" ${E.pick?"open":""}><summary style="font-size:.85rem">Alege cărțile una câte una</summary><div class="pickin"><span class="flabel">Vechiul Testament</span><div class="chipset">${OT.map(([x])=>`<button type="button" class="chip sm" data-gb="${gid}" data-b="${x}" aria-pressed="${sel.has(x)}">${x}</button>`).join("")}</div>
+      <span class="flabel">Noul Testament</span><div class="chipset">${NT.map(([x])=>`<button type="button" class="chip sm" data-gb="${gid}" data-b="${x}" aria-pressed="${sel.has(x)}">${x}</button>`).join("")}</div></div></details>
+    <span class="flabel">Capitole pe zi, în medie</span><div class="chipset">${[1,2,3,4,5].map(n=>`<button type="button" class="chip sm" data-gcpd="${gid}" data-n="${n}" aria-pressed="${E.cpd===n}">${n}</button>`).join("")}</div>
+    <span class="muted">${bk.length?`${bk.length} ${bk.length===1?"carte":"cărți"} · ${N} capitole · ${D} ${D===1?"zi":"zile"}`:"Alege cel puțin o carte."}</span>
+    <button class="btn small" data-gset="${gid}" ${bk.length?"":"disabled"} style="align-self:flex-start">Începe de azi</button>`}
+  if(E.mode==="bible")h+=`<div class="two"><select class="inp" data-gf="${gid}" data-k="bk" aria-label="Cartea">${BIB.map(([x])=>`<option ${E.bk===x?"selected":""}>${x}</option>`).join("")}</select>
+      <div class="two" style="gap:6px"><input class="inp" data-gf="${gid}" data-k="from" type="number" inputmode="numeric" min="1" placeholder="Cap." value="${esc(E.from)}" aria-label="De la capitolul"><input class="inp" data-gf="${gid}" data-k="to" type="number" inputmode="numeric" min="1" placeholder="până la" value="${esc(E.to)}" aria-label="Până la capitolul (opțional)"></div></div>
+    <input class="inp" data-gf="${gid}" data-k="note" maxlength="120" placeholder="Notă (opțional), ex.: discutăm joi" value="${esc(E.note)}" aria-label="Notă">
+    <button class="btn small" data-gset="${gid}" style="align-self:flex-start">Stabilește</button>`;
+  if(E.mode==="book")h+=`<input class="inp" data-gf="${gid}" data-k="title" maxlength="80" placeholder="Titlul cărții" value="${esc(E.title)}" aria-label="Titlul cărții">
+    <input class="inp" data-gf="${gid}" data-k="author" maxlength="60" placeholder="Autorul (opțional)" value="${esc(E.author)}" aria-label="Autorul">
+    <input class="inp" data-gf="${gid}" data-k="part" maxlength="60" placeholder="Ce citim: ex.: Capitolul 3 sau pag. 45–60" value="${esc(E.part)}" aria-label="Capitolul sau paginile">
+    <input class="inp" data-gf="${gid}" data-k="bnote" maxlength="120" placeholder="Notă (opțional), ex.: discutăm joi" value="${esc(E.bnote)}" aria-label="Notă">
+    <button class="btn small" data-gset="${gid}" style="align-self:flex-start">Stabilește</button>`;
+  if(g.plan)h+=`<button class="mini" data-gclear="${gid}" style="align-self:flex-start">Fără lectură comună</button>`;
+  return h+`</div></details>`;
+}
+function gReadHTML(g){
+  const d=gDay(g),myId=me().id;
+  if(!d)return'<p class="muted">Grupul nu are încă o lectură comună.</p>';
+  if(d.status==="future")return`<p class="muted">Planul „${esc(d.name)}” începe pe ${dm(d.start)}.</p>`;
+  if(d.status==="done")return`<p class="muted">Ați terminat planul „${esc(d.name)}”. Felicitări!</p>`;
+  const rd=g.reads||{},readers=g.members.filter(m=>rd[m.id]===d.tag).map(m=>m.name),mine=rd[myId]===d.tag;
+  let h=d.kind==="book"?`<div class="tag b">Carte</div><div class="reading">${esc(d.title)}</div>${d.author?`<span class="muted">de ${esc(d.author)}</span>`:""}${d.txt?`<p><b>De citit:</b> ${esc(d.txt)}</p>`:""}`
+    :`<div class="tag b">${esc(d.title)}</div><div class="reading">${esc(d.txt)}</div>${readLinks(d.txt)}`;
+  if(d.note)h+=`<p class="muted">${esc(d.note)}</p>`;
+  h+=mine?'<span class="ok" style="color:var(--rest)">✓ Ai citit</span>':`<button class="btn small" data-gread="${g.gid}" style="background:var(--rest);color:#141414;align-self:flex-start">Am citit</button>`;
+  h+=`<span class="muted">${readers.length?`Au citit: ${readers.map(esc).join(", ")}`:"Încă nu a citit nimeni."}</span>`;
+  return h;
+}
 let gLast="";const gMsg=t=>{gLast=t;const el=$("gMsg");if(el)el.textContent=t};
 const gErr=e=>e&&e.code==="code"?"Codul nu e valid. Verifică-l cu cel care te-a invitat.":e&&e.code==="max"?"Poți face parte din cel mult 5 grupuri.":e&&e.code==="full"?"Grupul e plin (30 de membri).":e&&e.code==="limit"?"Ai adăugat multe motive azi. Încearcă mâine.":"Nu s-a putut conecta. Verifică internetul și încearcă din nou.";
 async function gCall(path,extra,ok){try{const j=await fApi(path,extra);grp.active=true;grpSave();await groupsSync();if(ok)gMsg(ok);return j}catch(e){gMsg(gErr(e));throw e}}
@@ -1653,12 +1706,7 @@ function renderGroups(){
     h+=`<details class="gbox" data-gid="${g.gid}" ${openG?"open":""}><summary><span class="gname">${esc(g.name)}</span><span class="muted" style="font-weight:500;font-size:.8rem">${g.members.length} ${g.members.length===1?"membru":"membri"}${newReqs?` · ${newReqs} ${newReqs===1?"motiv nou":"motive noi"}`:""}</span></summary><div class="pickin">
       ${g.meet||g.owner?`<div class="gsec"><span class="flabel">Întâlnirea</span>${g.meet?`<p>${esc(g.meet)}</p>`:'<p class="muted">Nu e stabilită încă.</p>'}
         ${g.owner?`<div class="two"><input class="inp" id="gMeet-${g.gid}" maxlength="120" placeholder="ex.: Joi, 19:00, la Daniel" value="${esc(g.meet||"")}" aria-label="Întâlnirea"><button class="ghost" data-gmeet="${g.gid}">Salvează</button></div>`:""}</div>`:""}
-      <div class="gsec"><span class="flabel">Citim împreună</span>
-        ${d&&d.txt?`<div class="tag b">${esc(d.P.n)} · ziua ${d.i+1} din ${d.P.days.length}</div><div class="reading">${d.txt}</div>${readLinks(d.txt)}
-          ${has(TODAY,"b")?'<span class="ok" style="color:var(--rest)">✓ Ai citit azi</span>':`<button class="btn small" data-gread="1" style="background:var(--rest);color:#141414;align-self:flex-start">Am citit</button>`}`
-          :d&&d.i<0?`<p class="muted">Planul „${esc(d.P.n)}” începe pe ${dm(g.plan.start)}.</p>`:d?`<p class="muted">Ați terminat planul „${esc(d.P.n)}”. Felicitări!</p>`:'<p class="muted">Grupul nu are încă un plan comun.</p>'}
-        ${g.owner?`<div class="two"><select class="inp" id="gPlan-${g.gid}" aria-label="Planul grupului">${Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>`<option value="${k}" ${g.plan&&g.plan.k===k?"selected":""}>${esc(PLANS[k].n)}</option>`).join("")}</select><button class="ghost" data-gplan="${g.gid}">Începe de azi</button></div>`:""}
-      </div>
+      <div class="gsec"><span class="flabel">Citim împreună</span>${gReadHTML(g)}${g.owner?gEditorHTML(g):""}</div>
       <div class="gsec"><span class="flabel">Motive de rugăciune</span>
         <div class="two"><input class="inp" id="gReq-${g.gid}" maxlength="200" placeholder="Pentru ce să se roage grupul?" aria-label="Motiv de rugăciune pentru grup"><button class="btn small pray" data-greq="${g.gid}">Adaugă</button></div>
         ${g.reqs.length?`<ul class="plist">${g.reqs.map(r=>`<li><span>${esc(r.t)}<small>${esc(r.name)} · ${ago(r.ts)}${r.n?` · se roagă: ${r.who.map(esc).join(", ")}${r.n>r.who.length?" și alții":""}`:""}</small></span>
@@ -1684,8 +1732,24 @@ function renderGroups(){
   if($("gAcc"))$("gAcc").onclick=()=>join(gPend);
   if($("gIgn"))$("gIgn").onclick=()=>{gPend="";store.set("md_gpend","");renderGroups()};
   el.querySelectorAll("[data-gmeet]").forEach(b=>b.onclick=()=>gCall("/g/meet",{gid:b.dataset.gmeet,text:$("gMeet-"+b.dataset.gmeet).value},"Întâlnirea a fost salvată.").catch(()=>{}));
-  el.querySelectorAll("[data-gplan]").forEach(b=>b.onclick=()=>gCall("/g/plan",{gid:b.dataset.gplan,plan:$("gPlan-"+b.dataset.gplan).value,start:TODAY},"Planul comun începe de azi.").catch(()=>{}));
-  el.querySelectorAll("[data-gread]").forEach(b=>b.onclick=()=>{const p0=points();mark("b");renderGroups();celebrate("Încă o zi în Cuvânt","Ați citit împreună.",p0)});
+  el.querySelectorAll("details.gedit").forEach(d=>d.addEventListener("toggle",()=>{if(d.open)gEdOpen=d.dataset.ged;else if(gEdOpen===d.dataset.ged)gEdOpen=""}));
+  el.querySelectorAll("details.gpick").forEach(d=>d.addEventListener("toggle",()=>{gEdState(d.dataset.gpk).pick=d.open}));
+  el.querySelectorAll("[data-gmode]").forEach(b=>b.onclick=()=>{gEdState(b.dataset.gmode).mode=b.dataset.m;gEdOpen=b.dataset.gmode;renderGroups()});
+  el.querySelectorAll("[data-gf]").forEach(i=>{const f=()=>{gEdState(i.dataset.gf)[i.dataset.k]=i.value};i.oninput=f;i.onchange=f});
+  el.querySelectorAll("[data-gb]").forEach(b=>b.onclick=()=>{const E=gEdState(b.dataset.gb),x=b.dataset.b;E.books=E.books.includes(x)?E.books.filter(y=>y!==x):[...E.books,x];renderGroups()});
+  el.querySelectorAll("[data-gq]").forEach(b=>b.onclick=()=>{const E=gEdState(b.dataset.gq),l=QUICK[+b.dataset.i][1].map(x=>x[0]),all=l.every(x=>E.books.includes(x));E.books=all?E.books.filter(x=>!l.includes(x)):[...new Set([...E.books,...l])];renderGroups()});
+  el.querySelectorAll("[data-gcpd]").forEach(b=>b.onclick=()=>{gEdState(b.dataset.gcpd).cpd=+b.dataset.n;renderGroups()});
+  el.querySelectorAll("[data-gset]").forEach(b=>b.onclick=()=>{const gid=b.dataset.gset,E=gEdState(gid);let plan;
+    if(E.mode==="plan")plan={type:"plan",k:$("gPlan-"+gid).value};
+    else if(E.mode==="custom"){const bk=BIB.filter(x=>E.books.includes(x[0])).map(x=>x[0]);if(!bk.length)return;plan={type:"custom",books:bk,cpd:E.cpd,name:E.name.trim()||(bk.length===1?bk[0]:"Planul grupului")}}
+    else if(E.mode==="bible"){const f=parseInt(E.from,10),t=parseInt(E.to,10),max=(BIB.find(x=>x[0]===E.bk)||[0,150])[1];
+      if(!(f>=1&&f<=max)){gMsg(`Alege un capitol între 1 și ${max}.`);return}plan={type:"bible",text:`${E.bk} ${f}${t>f&&t<=max?"–"+t:""}`,note:E.note}}
+    else{if(!E.title.trim()){gMsg("Scrie titlul cărții.");return}plan={type:"book",title:E.title,author:E.author,part:E.part,note:E.bnote}}
+    gEdOpen="";gCall("/g/plan",{gid,plan,start:TODAY},"Lectura comună a fost stabilită.").catch(()=>{})});
+  el.querySelectorAll("[data-gclear]").forEach(b=>b.onclick=()=>{gEdOpen="";gCall("/g/plan",{gid:b.dataset.gclear,plan:null},"Lectura comună a fost scoasă.").catch(()=>{})});
+  el.querySelectorAll("[data-gread]").forEach(b=>b.onclick=async()=>{const g=list.find(x=>x.gid===b.dataset.gread),d=g&&gDay(g);if(!d)return;
+    try{await gCall("/g/read",{gid:g.gid,tag:d.tag})}catch(e){return}
+    if(d.bible&&!has(TODAY,"b")){const p0=points();mark("b");celebrate("Încă o zi în Cuvânt","Ați citit împreună.",p0)}});
   el.querySelectorAll("[data-greq]").forEach(b=>{const go=()=>{const t=$("gReq-"+b.dataset.greq).value.trim();if(!t){$("gReq-"+b.dataset.greq).focus();return}gCall("/g/req",{gid:b.dataset.greq,text:t},"Motivul a fost trimis grupului.").catch(()=>{})};b.onclick=go;$("gReq-"+b.dataset.greq).onkeydown=e=>{if(e.key==="Enter")go()}});
   el.querySelectorAll("[data-gpray]").forEach(b=>b.onclick=()=>gCall("/g/pray",{gid:b.dataset.gpray,rid:b.dataset.rid}).catch(()=>{}));
   el.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Șterge?";return}gCall("/g/reqdel",{gid:b.dataset.gdel,rid:b.dataset.rid}).catch(()=>{})});
