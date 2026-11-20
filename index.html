@@ -171,6 +171,13 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.gbox{background:var(--bg)}
+.gbox>summary{flex-wrap:wrap;gap:4px 10px}
+.gname{font-family:var(--display);font-weight:800;font-size:1.05rem}
+.gsec{display:flex;flex-direction:column;gap:8px;padding-top:12px;border-top:1px solid var(--line)}
+.gsec:first-child{border-top:0;padding-top:0}
+.mini.on{border-color:var(--pray);color:var(--ink);background:color-mix(in srgb,var(--pray) 22%,transparent)}
+.frlist small{display:block;color:var(--muted);font-size:.78rem;margin-top:2px}
 .frlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
 .frlist>li{padding:12px 0;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .frlist>li:first-child{border-top:0;padding-top:0}
@@ -423,6 +430,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <div class="card" id="recCard"></div>
     <button class="btn" id="instOpen" hidden>Instalează aplicația pe telefon</button>
     <section id="frSec"><h2>Prieteni</h2><div class="card" id="frCard"></div></section>
+    <section id="gSec"><h2>Grupuri mici</h2><div class="card" id="gCard"></div></section>
     <section><h2>Mementouri</h2><div class="card" id="remCard"></div></section>
     <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
     <section id="shSec"><h2>Împărtășește progresul</h2>
@@ -778,6 +786,11 @@ function renderAzi(){
   $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
   const unread=(fr.inbox||[]).filter(m=>m.ts>(fr.seen||0));
   if(unread.length){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">Încurajare</div><div style="font-weight:600">${esc(unread[0].name)}: „${esc(unread[0].msg)}”</div></div><button class="btn small" id="frSee" style="background:var(--serve)">Vezi</button></div></div>`);$("frSee").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
+  const toGroups=()=>{showTab("eu");setTimeout(()=>{const e=$("gSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)};
+  (grp.list||[]).slice().reverse().forEach(g=>{const d=gDay(g),nr=g.reqs.filter(r=>!r.mine&&r.ts>(grp.seen||0)).length;if(!(d&&d.txt)&&!nr&&!g.meet)return;
+    $("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div style="min-width:0"><div class="tag s">${esc(g.name)}</div><div style="font-weight:600">${d&&d.txt?"Citim împreună: "+d.txt:g.meet?esc(g.meet):""}</div>${nr?`<small class="muted">${nr} ${nr===1?"motiv nou":"motive noi"} de rugăciune</small>`:""}</div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`)});
+  if(gPend)$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag s">Grup mic</div><div style="font-weight:600">Ai fost invitat într-un grup de studiu și rugăciune.</div></div><button class="btn small" data-gto="1" style="background:var(--serve)">Vezi</button></div></div>`);
+  $("today").querySelectorAll("[data-gto]").forEach(b=>b.onclick=toGroups);
   if(pendCode){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag s">Invitație</div><div style="font-weight:600">Un prieten vrea să vă însoțiți în Kardia.</div></div><button class="btn small" id="frSeeInv" style="background:var(--serve)">Vezi</button></div></div>`);$("frSeeInv").onclick=()=>{showTab("eu");setTimeout(()=>{const e=$("frSec");if(e)e.scrollIntoView({behavior:"smooth"})},150)}}
   if(!prof){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag c">Profil</div><div style="font-weight:600">Răspunde la câteva întrebări ca să-ți potrivim programul.</div></div><button class="btn small" id="mkProf">Începe</button></div></div>`);
     $("mkProf").onclick=()=>openProfile(false)}
@@ -1319,6 +1332,7 @@ function renderEu(){
   renderMedals();
   renderRem();
   renderFriends();
+  renderGroups();
   renderShare();
   renderSuggest();
   let ch="";
@@ -1556,12 +1570,13 @@ const frSave=()=>store.set("md_friends",fr);
 async function fApi(path,extra){const m=me();const r=await fetch(PUSH_URL+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id:m.id,key:m.key,name:(prof&&prof.name)||"",...extra})});
   const j=await r.json().catch(()=>({}));if(!r.ok||!j.ok){const e=new Error(j.error||"net");e.code=j.error;throw e}return j}
 async function friendSync(force){
-  if(!fr.active&&!pendCode)return;if(!force&&Date.now()-frLast<20000)return;frLast=Date.now();
+  if(!fr.active&&!pendCode&&!grp.active&&!gPend)return;if(!force&&Date.now()-frLast<20000)return;frLast=Date.now();
   try{
     const t=log[TODAY]||{};
     await fApi("/f/status",{streak:streak(),today:{d:TODAY,c:!!t.c,b:!!t.b,r:!!t.r,s:!!t.s},areas:areas()});
-    const j=await fApi("/f/list",{});fr.list=j.friends||[];fr.inbox=j.inbox||[];frSave();
-    if(tab==="eu")renderFriends();else if(tab==="azi")renderAzi();
+    if(fr.active||pendCode){const j=await fApi("/f/list",{});fr.list=j.friends||[];fr.inbox=j.inbox||[];frSave()}
+    if(grp.active){const g=await fApi("/g/list",{});grp.list=g.groups||[];grpSave()}
+    if(tab==="eu"){renderFriends();renderGroups()}else if(tab==="azi")renderAzi();
   }catch(e){}
 }
 function friendSoon(){clearTimeout(frT);frT=setTimeout(()=>friendSync(true),1500)}
@@ -1605,6 +1620,70 @@ function renderFriends(){
     if(!msg){$("frTxt").focus();return}frMsg("Se trimite…");try{await fApi("/f/cheer",{to,msg});frOpen="";renderFriends();frMsg("Încurajarea a fost trimisă. ❤️")}catch(e){frMsg(frErr(e))}});
   el.querySelectorAll("[data-frem]").forEach(b=>b.onclick=async()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Sigur? Apasă din nou";return}
     try{await fApi("/f/remove",{fid:b.dataset.frem});fr.list=fr.list.filter(f=>f.id!==b.dataset.frem);frOpen="";frSave();renderFriends()}catch(e){frMsg(frErr(e))}});
+}
+
+
+/* ---------- small groups for study and prayer ---------- */
+let grp=store.get("md_groups",{active:false,list:[],seen:0}),gPend=store.get("md_gpend",""),gOpen=store.get("md_gopen",""),gNew="";
+{const hm=location.hash.match(/^#g-([A-Za-z0-9]{6})$/);if(hm){gPend=hm[1].toUpperCase();store.set("md_gpend",gPend);try{history.replaceState(null,"","#azi")}catch(e){}}}
+const grpSave=()=>store.set("md_groups",grp);
+async function groupsSync(){if(!grp.active)return;try{const j=await fApi("/g/list",{});grp.list=j.groups||[];grpSave();if(tab==="eu")renderGroups();else if(tab==="azi")renderAzi()}catch(e){}}
+function gDay(g){if(!g.plan||!PLANS[g.plan.k])return null;const P=PLANS[g.plan.k],i=Math.floor((Date.parse(TODAY+"T12:00:00")-Date.parse(g.plan.start+"T12:00:00"))/864e5);return{P,i,txt:i<0?"":i>=P.days.length?"":P.days[i]}}
+let gLast="";const gMsg=t=>{gLast=t;const el=$("gMsg");if(el)el.textContent=t};
+const gErr=e=>e&&e.code==="code"?"Codul nu e valid. Verifică-l cu cel care te-a invitat.":e&&e.code==="max"?"Poți face parte din cel mult 5 grupuri.":e&&e.code==="full"?"Grupul e plin (30 de membri).":e&&e.code==="limit"?"Ai adăugat multe motive azi. Încearcă mâine.":"Nu s-a putut conecta. Verifică internetul și încearcă din nou.";
+async function gCall(path,extra,ok){try{const j=await fApi(path,extra);grp.active=true;grpSave();await groupsSync();if(ok)gMsg(ok);return j}catch(e){gMsg(gErr(e));throw e}}
+function renderGroups(){
+  const el=$("gCard");if(!el)return;
+  const DOT={c:["var(--accent)","Mișcare"],b:["var(--rest)","Biblie"],r:["var(--pray)","Rugăciune"],s:["var(--serve)","Slujire"]};
+  const list=grp.list||[];
+  let h=`<p class="muted">Un grup mic de studiu și rugăciune: citiți împreună, vă purtați poverile în rugăciune și vă vedeți constanța unul altuia.</p>`;
+  if(gPend)h+=`<div class="frinv"><b>Ai fost invitat într-un grup</b><span class="muted">Cod: ${esc(gPend)}</span><div class="opts"><button class="btn small" id="gAcc">Intră în grup</button><button class="ghost" id="gIgn">Ignoră</button></div></div>`;
+  list.forEach(g=>{
+    const d=gDay(g),openG=gOpen===g.gid,newReqs=g.reqs.filter(r=>!r.mine&&r.ts>(grp.seen||0)).length;
+    h+=`<details class="gbox" data-gid="${g.gid}" ${openG?"open":""}><summary><span class="gname">${esc(g.name)}</span><span class="muted" style="font-weight:500;font-size:.8rem">${g.members.length} ${g.members.length===1?"membru":"membri"}${newReqs?` · ${newReqs} ${newReqs===1?"motiv nou":"motive noi"}`:""}</span></summary><div class="pickin">
+      ${g.meet||g.owner?`<div class="gsec"><span class="flabel">Întâlnirea</span>${g.meet?`<p>${esc(g.meet)}</p>`:'<p class="muted">Nu e stabilită încă.</p>'}
+        ${g.owner?`<div class="two"><input class="inp" id="gMeet-${g.gid}" maxlength="120" placeholder="ex.: Joi, 19:00, la Daniel" value="${esc(g.meet||"")}" aria-label="Întâlnirea"><button class="ghost" data-gmeet="${g.gid}">Salvează</button></div>`:""}</div>`:""}
+      <div class="gsec"><span class="flabel">Citim împreună</span>
+        ${d&&d.txt?`<div class="tag b">${esc(d.P.n)} · ziua ${d.i+1} din ${d.P.days.length}</div><div class="reading">${d.txt}</div>${readLinks(d.txt)}
+          ${has(TODAY,"b")?'<span class="ok" style="color:var(--rest)">✓ Ai citit azi</span>':`<button class="btn small" data-gread="1" style="background:var(--rest);color:#141414;align-self:flex-start">Am citit</button>`}`
+          :d&&d.i<0?`<p class="muted">Planul „${esc(d.P.n)}” începe pe ${dm(g.plan.start)}.</p>`:d?`<p class="muted">Ați terminat planul „${esc(d.P.n)}”. Felicitări!</p>`:'<p class="muted">Grupul nu are încă un plan comun.</p>'}
+        ${g.owner?`<div class="two"><select class="inp" id="gPlan-${g.gid}" aria-label="Planul grupului">${Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>`<option value="${k}" ${g.plan&&g.plan.k===k?"selected":""}>${esc(PLANS[k].n)}</option>`).join("")}</select><button class="ghost" data-gplan="${g.gid}">Începe de azi</button></div>`:""}
+      </div>
+      <div class="gsec"><span class="flabel">Motive de rugăciune</span>
+        <div class="two"><input class="inp" id="gReq-${g.gid}" maxlength="200" placeholder="Pentru ce să se roage grupul?" aria-label="Motiv de rugăciune pentru grup"><button class="btn small pray" data-greq="${g.gid}">Adaugă</button></div>
+        ${g.reqs.length?`<ul class="plist">${g.reqs.map(r=>`<li><span>${esc(r.t)}<small>${esc(r.name)} · ${ago(r.ts)}${r.n?` · se roagă: ${r.who.map(esc).join(", ")}${r.n>r.who.length?" și alții":""}`:""}</small></span>
+          <div class="opts"><button class="mini ${r.me?"on":""}" data-gpray="${g.gid}" data-rid="${r.id}" aria-pressed="${r.me}">🙏 ${r.me?"Mă rog":"Mă rog"}${r.n?" · "+r.n:""}</button>${r.mine||g.owner?`<button class="mini" data-gdel="${g.gid}" data-rid="${r.id}" aria-label="Șterge">✕</button>`:""}</div></li>`).join("")}</ul>`:'<p class="muted">Niciun motiv încă. Fii primul care cere sau oferă rugăciune.</p>'}
+      </div>
+      <div class="gsec"><span class="flabel">Membri</span><ul class="frlist">${g.members.map(m=>{const t=m.today&&m.today.d===TODAY?m.today:null;
+        return`<li><div><b>${esc(m.name)}</b>${m.id===g.ownerId?' <span class="muted" style="font-size:.75rem">· lider</span>':""}<small>${m.streak?`${m.streak} ${m.streak===1?"zi":"zile"} la rând`:"La început de drum"}${m.at?" · activ "+ago(m.at):""}</small>
+          <div class="frdots">${(m.areas||[]).filter(a=>DOT[a]).map(a=>`<span class="${t&&t[a]?"on":""}" style="--c:${DOT[a][0]}">${DOT[a][1]}</span>`).join("")}</div></div></li>`}).join("")}</ul></div>
+      <div class="gsec"><span class="flabel">Invită în grup</span><div class="opts" style="align-items:center"><span class="frcode" style="font-size:1.5rem">${g.code}</span><button class="btn small" data-gshare="${g.gid}">Trimite invitația</button></div></div>
+      <button class="mini" data-gleave="${g.gid}" style="align-self:flex-start">Părăsește grupul</button>
+    </div></details>`});
+  h+=`<div class="field"><span class="flabel">Creează un grup</span><div class="two"><input class="inp" id="gName" maxlength="40" placeholder="ex.: Grupul de joi" aria-label="Numele grupului" value="${esc(gNew)}"><button class="btn small" id="gCreate">Creează</button></div></div>
+    <div class="field"><span class="flabel">Intră într-un grup</span><div class="two"><input class="inp" id="gCode" maxlength="6" autocapitalize="characters" placeholder="Codul grupului" aria-label="Codul grupului"><button class="ghost" id="gJoin">Intră</button></div></div>
+    <span class="muted" id="gMsg" role="status">${esc(gLast)}</span>`;
+  el.innerHTML=h;
+  const seenMax=Math.max(0,...list.flatMap(g=>g.reqs.filter(r=>!r.mine).map(r=>r.ts)));if(seenMax>(grp.seen||0)&&list.some(g=>g.gid===gOpen)){grp.seen=seenMax;grpSave()}
+  el.querySelectorAll("details.gbox").forEach(d=>d.addEventListener("toggle",()=>{if(d.open){gOpen=d.dataset.gid;store.set("md_gopen",gOpen);const g=list.find(x=>x.gid===gOpen);if(g){const mx=Math.max(0,...g.reqs.filter(r=>!r.mine).map(r=>r.ts));if(mx>(grp.seen||0)){grp.seen=mx;grpSave()}}}else if(gOpen===d.dataset.gid){gOpen="";store.set("md_gopen","")}}));
+  $("gName").oninput=e=>gNew=e.target.value;
+  $("gCreate").onclick=async()=>{const n=$("gName").value.trim();if(!n){$("gName").focus();return}gMsg("Se creează…");try{const j=await gCall("/g/create",{gname:n});gNew="";gOpen=j.gid;store.set("md_gopen",gOpen);renderGroups();gMsg("Grupul a fost creat. Trimite invitația membrilor.");friendSync(true)}catch(e){}};
+  const join=async c=>{c=String(c||"").trim().toUpperCase();if(!/^[A-Z0-9]{6}$/.test(c)){gMsg("Codul are 6 caractere.");return}gMsg("Se intră în grup…");
+    try{const j=await gCall("/g/join",{code:c});gPend="";store.set("md_gpend","");gOpen=j.gid;store.set("md_gopen",gOpen);renderGroups();gMsg(`Bine ai venit în „${j.name}”!`);friendSync(true)}catch(e){}};
+  $("gJoin").onclick=()=>join($("gCode").value);$("gCode").onkeydown=e=>{if(e.key==="Enter")join($("gCode").value)};
+  if($("gAcc"))$("gAcc").onclick=()=>join(gPend);
+  if($("gIgn"))$("gIgn").onclick=()=>{gPend="";store.set("md_gpend","");renderGroups()};
+  el.querySelectorAll("[data-gmeet]").forEach(b=>b.onclick=()=>gCall("/g/meet",{gid:b.dataset.gmeet,text:$("gMeet-"+b.dataset.gmeet).value},"Întâlnirea a fost salvată.").catch(()=>{}));
+  el.querySelectorAll("[data-gplan]").forEach(b=>b.onclick=()=>gCall("/g/plan",{gid:b.dataset.gplan,plan:$("gPlan-"+b.dataset.gplan).value,start:TODAY},"Planul comun începe de azi.").catch(()=>{}));
+  el.querySelectorAll("[data-gread]").forEach(b=>b.onclick=()=>{const p0=points();mark("b");renderGroups();celebrate("Încă o zi în Cuvânt","Ați citit împreună.",p0)});
+  el.querySelectorAll("[data-greq]").forEach(b=>{const go=()=>{const t=$("gReq-"+b.dataset.greq).value.trim();if(!t){$("gReq-"+b.dataset.greq).focus();return}gCall("/g/req",{gid:b.dataset.greq,text:t},"Motivul a fost trimis grupului.").catch(()=>{})};b.onclick=go;$("gReq-"+b.dataset.greq).onkeydown=e=>{if(e.key==="Enter")go()}});
+  el.querySelectorAll("[data-gpray]").forEach(b=>b.onclick=()=>gCall("/g/pray",{gid:b.dataset.gpray,rid:b.dataset.rid}).catch(()=>{}));
+  el.querySelectorAll("[data-gdel]").forEach(b=>b.onclick=()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Șterge?";return}gCall("/g/reqdel",{gid:b.dataset.gdel,rid:b.dataset.rid}).catch(()=>{})});
+  el.querySelectorAll("[data-gleave]").forEach(b=>b.onclick=async()=>{if(!b.dataset.arm){b.dataset.arm=1;b.textContent="Sigur? Apasă din nou";return}try{await gCall("/g/leave",{gid:b.dataset.gleave},"Ai părăsit grupul.")}catch(e){}});
+  el.querySelectorAll("[data-gshare]").forEach(b=>b.onclick=async()=>{const g=list.find(x=>x.gid===b.dataset.gshare);if(!g)return;
+    const t=`Te invit în grupul „${g.name}” din Kardia, ca să citim și să ne rugăm împreună: https://kardiaapp.ro/#g-${g.code} (sau introdu codul ${g.code} în Eu → Grupuri mici).`;
+    try{if(navigator.share){await navigator.share({text:t});return}}catch(e){if(e&&e.name==="AbortError")return}
+    try{await navigator.clipboard.writeText(t);gMsg("Invitația a fost copiată. Lipește-o într-un mesaj.")}catch(e){gMsg("Trimite membrilor codul "+g.code+".")}});
 }
 
 /* ---------- suggestions ---------- */
@@ -1759,7 +1838,7 @@ function confetti(){
 }
 document.addEventListener("touchstart",()=>{},{passive:true});
 checkBadges();
-if(fr.active)setTimeout(()=>friendSync(true),1200);
+if(fr.active||grp.active)setTimeout(()=>friendSync(true),1200);
 if(pushOn)setTimeout(pushSync,2000);
 $("resetAsk").onclick=()=>{$("resetAsk").hidden=true;$("resetConfirm").hidden=false};
 $("resetNo").onclick=()=>{$("resetConfirm").hidden=true;$("resetAsk").hidden=false};
