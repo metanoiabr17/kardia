@@ -294,6 +294,9 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 .check{width:76px;height:76px}
 .check circle{fill:var(--soft);stroke:var(--accent);stroke-width:3}
 .check path{fill:none;stroke:var(--accent);stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:40;stroke-dashoffset:40;animation:draw .5s .25s forwards}
+.news-card{text-align:left;align-items:stretch;max-height:calc(100dvh - 40px);overflow:auto}
+.news-card h3{text-align:left}
+.news-card .wlist{max-width:none}
 .cele h3{font-size:1.5rem;font-weight:900}
 .pts{font-family:var(--display);font-weight:900;font-size:2.2rem;color:var(--accent);line-height:1}
 .lvup{background:var(--soft);border-radius:12px;padding:8px 12px;font-weight:600;font-size:.9rem}
@@ -531,6 +534,16 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
       <button class="btn" id="pause">Pauză</button>
       <button class="ghost" id="skip">Sari</button>
     </div>
+  </div>
+</div>
+
+<div class="cele" id="news" hidden>
+  <div class="cele-card news-card" role="dialog" aria-modal="true" aria-labelledby="newsT">
+    <span class="tag s" style="margin:0">Actualizare</span>
+    <h3 id="newsT">Ce e nou în Kardia</h3>
+    <ul class="wlist" id="newsL"></ul>
+    <div id="newsAdd" style="width:100%"></div>
+    <button class="btn" id="newsOk">Am înțeles</button>
   </div>
 </div>
 
@@ -1301,7 +1314,7 @@ function saveProfile(){
   p.fastRestrict=p.age===0||!p.health.includes(4);
   const w=parseFloat(String(p.weight||"").replace(",","."));
   if(w>0)addProg({w});
-  p.created=p.created||TODAY;prof=p;store.set("md_profile",p);draft=null;if(pushOn)pushSync();
+  p.created=p.created||TODAY;prof=p;store.set("md_profile",p);store.set("md_news",NEWSV);draft=null;if(pushOn)pushSync();
   if(ownPlan){showTab("biblie");$("buildD").open=true;setTimeout(()=>$("buildD").scrollIntoView({behavior:"smooth",block:"start"}),50)}else showTab("eu");
 }
 
@@ -1930,6 +1943,27 @@ $("resetYes").onclick=()=>{
 };
 
 if(!prof&&!store.get("md_skipprof",0)&&!location.hash)openProfile(false);else showTab(tab);
+
+/* ---------- what's new, shown once per update to people who already use the app ---------- */
+const NEWSV="2026-11-20";
+const NEWS=[
+ ["grup","var(--serve)","Grup mic","Fă-ți un grup cu prietenii sau intră într-unul cu un cod. Vă rugați unii pentru alții și vedeți cine a citit."],
+ ["biblie","var(--rest)","Citim împreună","Liderul alege ce citește grupul: un plan gata făcut, planul vostru, un pasaj din Biblie sau altă carte creștină."],
+ ["serve","var(--serve)","Slujire","În fiecare zi, o idee simplă ca să faci bine cuiva."],
+ ["eu","var(--accent)","Alegi ce folosești","Din Eu → Editează poți păstra doar secțiunile care te ajută."]];
+let newsAdd=new Set();
+function showNews(){
+  $("newsL").innerHTML=NEWS.map(([k,c,t,d])=>`<li><span class="wic" style="--c:${c}"><svg viewBox="0 0 24 24">${TABS.find(x=>x[0]===k)[2]}</svg></span><span><b>${t}</b><br><span class="muted">${d}</span></span></li>`).join("");
+  const miss=[["g","Grup mic",5],["s","Slujire",4]].filter(([k])=>!useA(k));
+  const drawAdd=()=>{$("newsAdd").innerHTML=miss.length?`<span class="flabel">Vrei să le adaugi în aplicația ta?</span><div class="chipset">${miss.map(([k,l])=>`<button type="button" class="chip" data-nadd="${k}" aria-pressed="${newsAdd.has(k)}">${l}</button>`).join("")}</div>`:"";
+    $("newsAdd").querySelectorAll("[data-nadd]").forEach(b=>b.onclick=()=>{const k=b.dataset.nadd;newsAdd.has(k)?newsAdd.delete(k):newsAdd.add(k);drawAdd()});$("newsOk").textContent=newsAdd.size?"Adaugă și continuă":"Am înțeles"};
+  drawAdd();$("news").hidden=false;$("newsOk").focus();
+}
+$("newsOk").onclick=()=>{store.set("md_news",NEWSV);$("news").hidden=true;
+  if(newsAdd.size&&prof){const ix={g:5,s:4};prof.areas=[...new Set([...(prof.areas||[0,1,2,3]),...[...newsAdd].map(k=>ix[k])])].sort();store.set("md_profile",prof);
+    const go=newsAdd.has("g")?"grup":"serve";newsAdd.clear();showTab(go)}};
+if(prof&&store.get("md_news","")!==NEWSV)setTimeout(()=>{if($("cele").hidden&&tab!=="start")showNews();else store.set("md_news",NEWSV)},700);
+
 </script>
 
 
