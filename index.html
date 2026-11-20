@@ -377,7 +377,8 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <div class="card">
       <p>Rugăciunea începe cu <b>cine este Dumnezeu</b>, nu cu lista de cereri. Scriptura îți dă cuvintele, închinarea vine întâi, iar cererile izvorăsc din ce ai descoperit în text.</p>
     </div>
-    <section><h2>Cât timp ai</h2><div class="chips" id="durPick"></div>
+    <section><h2>Ritmul</h2><div class="seg" id="paceSeg"></div></section>
+    <section id="durSec"><h2>Cât timp ai</h2><div class="chips" id="durPick"></div>
       <div class="opts" id="durCustom" hidden style="margin-top:10px;align-items:center"><input class="inp" id="rMin" type="number" inputmode="numeric" min="1" max="180" style="max-width:120px" aria-label="Minute de rugăciune" placeholder="ex.: 15"><span class="muted">minute</span><button class="btn small pray" id="rSet">Setează</button></div></section>
     <section><h2>Pasajul</h2><div class="seg" id="srcPick"></div></section>
     <label class="toggle"><input type="checkbox" id="exTog"> Arată-mi exemple de cuvinte la fiecare pas</label>
@@ -656,7 +657,7 @@ const bNext=()=>{const d=bDone(),days=PLANS[bible.plan].days;for(let i=0;i<days.
 /* ---------- prayer ---------- */
 const WORSHIP=["Psalmul 8","Psalmul 19","Psalmul 23","Psalmul 27","Psalmul 33","Psalmul 34","Psalmul 46","Psalmul 63","Psalmul 84","Psalmul 90","Psalmul 91","Psalmul 95","Psalmul 96","Psalmul 100","Psalmul 103","Psalmul 104","Psalmul 111","Psalmul 113","Psalmul 121","Psalmul 136","Psalmul 139","Psalmul 145","Psalmul 146","Psalmul 147","Psalmul 148","Isaia 40","Isaia 6:1-8","Apocalipsa 4","Apocalipsa 5","Coloseni 1:15-20","Efeseni 1:3-14","Ioan 1:1-18"];
 const FOCUS=["biserica ta și cei care o slujesc","familia ta","prietenii și cei care încă nu-L cunosc pe Isus","colegii, elevii și locul tău de muncă","orașul, țara și cei care conduc","cei bolnavi, singuri sau în suferință","lucrarea lui Dumnezeu în lume și ziua de mâine"];
-let pray=store.get("md_pray",{min:10,src:"ps"});if(pray.ex===undefined)pray.ex=true;
+let pray=store.get("md_pray",{min:10,src:"ps"});if(pray.ex===undefined)pray.ex=true;if(pray.free===undefined)pray.free=true;
 const psalmToday=WORSHIP[((dayNum%WORSHIP.length)+WORSHIP.length)%WORSHIP.length];
 function prayPassage(){
   if(pray.src==="plan"){const i=bNext();const days=PLANS[bible.plan].days;return days[i<0?days.length-1:i].split(";")[0]}
@@ -672,7 +673,7 @@ function prayerSteps(){
    ["Mijlocire",2,`Roagă-te pentru alții folosind adevărurile din text. Azi: ${F}.`],
    ["Încheiere în închinare",.5,"Încheie cum ai început. Mulțumește-I pentru cine este El și pentru că te ascultă."]
   ];
-  return S.map(([t,w,c],i)=>({kind:"time",tone:"pray",phase:"Rugăciune · pasul "+(i+1)+" din "+S.length,title:t,cue:c+(pray.ex?"\n\nExemplu: „"+EXS[i]+"”":""),dur:Math.round(w*m*6),
+  return S.map(([t,w,c],i)=>({kind:pray.free?"free":"time",reps:i+1,total:S.length,unit:"din "+S.length,btn:i<S.length-1?"Pasul următor":"Amin",tone:"pray",phase:"Rugăciune · pasul "+(i+1)+" din "+S.length,title:t,cue:c+(pray.ex?"\n\nExemplu: „"+EXS[i]+"”":""),dur:Math.round(w*m*6),
     next:S[i+1]?"Urmează: <b>"+S[i+1][0]+"</b>":""}));
 }
 
@@ -734,7 +735,7 @@ function renderAzi(){
   const cards=[
    {t:"c",tag:"Mișcare",title:corpMode==="run"?runTitle():corpMode==="mil"&&mn?`Program militar · săpt. ${mn[0]} · ${MIL[mn[1]].k}`:`Rutina zilnică · ${LEVELS[level].name}`,done:has(TODAY,"c"),go:"corp"},
    {t:"b",tag:"Biblie",title:bi<0?"Plan terminat. Alege altul.":`Ziua ${bi+1}: ${bd[bi]}`,done:has(TODAY,"b"),go:"biblie"},
-   {t:"r",tag:"Rugăciune",title:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
+   {t:"r",tag:"Rugăciune",title:pray.free?`Rugăciune cu ${prayPassage()}`:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
    {t:"p",tag:"Post",title:fast.active?`În desfășurare: ${FASTS.find(f=>f.id===fast.active.id).n}`:"Opțional. Alege când ești pregătit.",done:false,go:"post"}
   ];
   $("today").style.cssText="display:flex;flex-direction:column;gap:10px";
@@ -874,6 +875,9 @@ function renderRug(){
   $("rugGuided").hidden=prayMode!=="guided";$("rugLearn").hidden=prayMode!=="learn";
   if(prayMode==="learn"){renderLearn();return}
   $("exTog").checked=!!pray.ex;$("exTog").onchange=()=>{pray.ex=$("exTog").checked;store.set("md_pray",pray);renderRug()};
+  $("paceSeg").innerHTML=[[true,"În ritmul meu","fără cronometru"],[false,"Cu cronometru","pași cu timp fix"]].map(([v,l,sub])=>`<button class="lvl" data-pace="${v}" aria-pressed="${pray.free===v}"><b style="font-size:.95rem">${l}</b><span>${sub}</span></button>`).join("");
+  $("paceSeg").querySelectorAll("[data-pace]").forEach(b=>b.onclick=()=>{pray.free=b.dataset.pace==="true";store.set("md_pray",pray);renderRug()});
+  $("durSec").hidden=pray.free;
   const PRE=[5,10,20,30],own=!PRE.includes(pray.min);
   $("durPick").innerHTML=PRE.map(m=>`<button class="lvl" data-m="${m}" aria-pressed="${pray.min===m}"><b>${m}</b><span>minute</span></button>`).join("")
     +`<button class="lvl" data-own="1" aria-pressed="${own}"><b>${own?pray.min:"Altă"}</b><span>${own?"minute":"durată"}</span></button>`;
@@ -886,8 +890,8 @@ function renderRug(){
   $("srcPick").querySelectorAll("button").forEach(b=>b.onclick=()=>{pray.src=b.dataset.s;store.set("md_pray",pray);renderRug()});
   const st=prayerSteps();
   $("prayCard").innerHTML=`<div class="tag r">Pașii de azi · ${prayPassage()}</div>
-    <div class="plan" style="border:0"><ol>${st.map((s,i)=>`<li style="padding:8px 0"><span class="i">${i+1}</span><span class="n">${s.title}</span><span class="t">${fmt(s.dur)}</span></li>`).join("")}</ol></div>
-    ${readLinks(prayPassage())}<p class="muted">Ține Biblia deschisă la ${prayPassage()}. Te poți ruga cu voce tare sau în gând. Treci mai departe oricând cu „Sari”.</p>`;
+    <div class="plan" style="border:0"><ol>${st.map((s,i)=>`<li style="padding:8px 0"><span class="i">${i+1}</span><span class="n">${s.title}</span><span class="t">${pray.free?"":fmt(s.dur)}</span></li>`).join("")}</ol></div>
+    ${readLinks(prayPassage())}<p class="muted">Ține Biblia deschisă la ${prayPassage()}. Te poți ruga cu voce tare sau în gând. ${pray.free?"Nu există cronometru: stai la fiecare pas cât simți nevoia și apasă „Pasul următor” când ești gata. Nu există rugăciune prea scurtă sau prea lungă; Dumnezeu se uită la inimă, nu la ceas.":"Treci mai departe oricând cu „Sari”."}</p>`;
   $("prayDone").hidden=!has(TODAY,"r");
 }
 
@@ -1021,16 +1025,17 @@ function renderLearn(){
     <p><b>Citește:</b> ${L.ref}</p>
     <div class="example"><div class="tag r">Exemplu de rugăciune</div><p>„${L.ex}”</p></div>
     <p><b>Încearcă acum:</b> ${L.tr}</p>
-    <div class="opts" style="align-items:center"><button class="btn small pray" data-prac="${i}">Exersează · ${L.dur} min</button>${done[i]?'<span class="ok" style="color:var(--pray)">✓ Lecție terminată</span>':`<button class="ghost" data-lok="${i}">Am înțeles</button>`}</div></div></details>`});
+    <div class="opts" style="align-items:center"><button class="btn small pray" data-prac="${i}">${pray.free?"Exersează":`Exersează · ${L.dur} min`}</button>${done[i]?'<span class="ok" style="color:var(--pray)">✓ Lecție terminată</span>':`<button class="ghost" data-lok="${i}">Am înțeles</button>`}</div></div></details>`});
   if(n>=LESSONS.length)h+=`<div class="donebox">Ai parcurs toate lecțiile. Acum te poți ruga zilnic cu rugăciunea ghidată.<div style="margin-top:10px"><button class="btn small pray" id="toGuided">Mergi la rugăciunea ghidată</button></div></div>`;
   $("rugLearn").innerHTML=h;
   const setDone=i=>{const d=store.get("md_lessons",{});d[i]=TODAY;store.set("md_lessons",d)};
   $("rugLearn").querySelectorAll("[data-lok]").forEach(b=>b.onclick=()=>{setDone(+b.dataset.lok);renderRug()});
   $("rugLearn").querySelectorAll("[data-prac]").forEach(b=>b.onclick=()=>{const i=+b.dataset.prac,L=LESSONS[i],ph=`Lecția ${i+1} · exercițiu`;
+    const K=pray.free?"free":"time",fx=(n,b)=>({reps:n,total:3,unit:"din 3",btn:b});
     runStart([
-      {kind:"time",tone:"pray",phase:ph,title:"Citește",cue:`Citește încet ${L.ref}.`,dur:60,next:"Urmează: <b>Încearcă</b>"},
-      {kind:"time",tone:"pray",phase:ph,title:"Încearcă",cue:L.tr+"\n\nExemplu: „"+L.ex+"”",dur:Math.round((L.dur-1.5)*60),next:"Urmează: <b>Amin</b>"},
-      {kind:"time",tone:"pray",phase:ph,title:"Amin",cue:"Încheie cu mulțumire. Dumnezeu te-a ascultat.",dur:30}
+      {kind:K,...fx(1,"Pasul următor"),tone:"pray",phase:ph,title:"Citește",cue:`Citește încet ${L.ref}.`,dur:60,next:"Urmează: <b>Încearcă</b>"},
+      {kind:K,...fx(2,"Pasul următor"),tone:"pray",phase:ph,title:"Încearcă",cue:L.tr+"\n\nExemplu: „"+L.ex+"”",dur:Math.round((L.dur-1.5)*60),next:"Urmează: <b>Amin</b>"},
+      {kind:K,...fx(3,"Amin"),tone:"pray",phase:ph,title:"Amin",cue:"Încheie cu mulțumire. Dumnezeu te-a ascultat.",dur:30}
     ],()=>{const p0=points();setDone(i);mark("r");celebrate(`Lecția ${i+1} terminată`,L.t,p0)})});
   if($("toGuided"))$("toGuided").onclick=()=>{prayMode="guided";store.set("md_praymode",prayMode);renderRug();window.scrollTo(0,0)};
 }
@@ -1060,14 +1065,15 @@ function go(i){
   $("progBar").style.background=tone==="pray"?"var(--pray)":"var(--accent)";
   const pb=$("pause");pb.className="btn"+(tone==="pray"?" pray":"");
   if(s.kind==="reps"){$("secN").className="";$("secN").textContent=s.reps;$("secU").textContent=s.unit;$("arc").style.strokeDashoffset=0;pb.textContent="Gata ✓"}
+  else if(s.kind==="free"){$("secN").className="";$("secN").textContent=s.reps;$("secU").textContent=s.unit;$("arc").style.strokeDashoffset=326.73*(1-s.reps/s.total);pb.textContent=s.btn||"Pasul următor"}
   else{pb.textContent="Pauză";$("secU").textContent=tone==="pray"?"timp rămas":"";draw()}
-  if(tone==="pray"){if(i>0)bell()}else if(tone==="work"){beep(1046,250);buzz(120)}else if(s.say){beep(660,150);setTimeout(()=>beep(523,250),180)}
+  if(tone==="pray"){if(i>0&&s.kind!=="free")bell()}else if(tone==="work"){beep(1046,250);buzz(120)}else if(s.say){beep(660,150);setTimeout(()=>beep(523,250),180)}
   if(s.say)setTimeout(()=>speak(s.say),350);
 }
-function draw(){const s=R.steps[R.idx];if(s.kind==="reps")return;const left=Math.max(0,R.rem);
+function draw(){const s=R.steps[R.idx];if(s.kind==="reps"||s.kind==="free")return;const left=Math.max(0,R.rem);
   const n=$("secN");if(s.dur>=100){n.className="long";n.textContent=fmt(Math.ceil(left))}else{n.className="";n.textContent=Math.ceil(left)}
   $("arc").style.strokeDashoffset=326.73*(1-left/s.dur)}
-function tick(){const s=R.steps[R.idx];if(!s||R.paused||s.kind==="reps")return;
+function tick(){const s=R.steps[R.idx];if(!s||R.paused||s.kind==="reps"||s.kind==="free")return;
   R.rem=(R.endAt-Date.now())/1000;const c=Math.ceil(R.rem);
   if(s.tone!=="pray"&&c<=3&&c>0&&c!==lastBeep){lastBeep=c;beep(660,100);const n=$("secN");n.classList.remove("pulse");void n.offsetWidth;n.classList.add("pulse");buzz(30)}
   if(R.rem<=0){go(R.idx+1);return}draw()}
@@ -1078,7 +1084,7 @@ function runFinish(){const s=R.steps[R.steps.length-1];
 $("quit").onclick=()=>{runStop();render()};
 $("skip").onclick=()=>go(R.idx+1);
 $("back").onclick=()=>{let j=R.idx-1;while(j>0&&R.steps[j].kind==="rest")j--;go(j)};
-$("pause").onclick=()=>{const s=R.steps[R.idx];if(s.kind==="reps"){go(R.idx+1);return}
+$("pause").onclick=()=>{const s=R.steps[R.idx];if(s.kind==="reps"||s.kind==="free"){go(R.idx+1);return}
   if(!R.paused){R.paused=true;R.rem=(R.endAt-Date.now())/1000;$("pause").textContent="Continuă"}
   else{R.paused=false;R.endAt=Date.now()+R.rem*1000;$("pause").textContent="Pauză"}};
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&R.timer&&!wake&&navigator.wakeLock)navigator.wakeLock.request("screen").then(w=>wake=w).catch(()=>{});
@@ -1129,7 +1135,8 @@ const Q=[
  {k:"minutes",when:d=>d.areas.includes(0),t:"one",l:"Cât timp ai pentru mișcare într-o zi obișnuită?",o:["5 minute","10 minute","15+ minute"]},
  {k:"health",when:d=>d.areas.includes(3),t:"many",l:"Ai vreuna dintre acestea? (contează pentru post)",o:["Diabet","Probleme cu tensiunea","Sarcină sau alăptare","Medicamente zilnice","Nimic din acestea"],none:4},
  {k:"bplan",when:d=>d.areas.includes(1),t:"one",l:"Cu ce plan de citire vrei să începi?",o:[...Object.keys(PLANS).filter(k=>!PLANS[k].custom).map(k=>PLANS[k].n),"Îmi fac propriul plan"]},
- {k:"pmin",when:d=>d.areas.includes(2),t:"one",l:"Cât timp vrei să te rogi zilnic?",o:["5 minute","10 minute","20 minute","Aleg eu"]}
+ {k:"pmode",when:d=>d.areas.includes(2),t:"one",l:"Cum vrei să te rogi?",o:["În ritmul meu, fără cronometru","Cu cronometru"]},
+ {k:"pmin",when:d=>d.areas.includes(2)&&d.pmode===1,t:"one",l:"Cât timp vrei să te rogi zilnic?",o:["5 minute","10 minute","20 minute","Aleg eu"]}
 ];
 const LIM=[
  ["Genuflexiuni cu săritură","Fandări alternative","Fandări","Patinatorul","Burpees","Burpee militar","Jumping jacks"],
@@ -1137,9 +1144,9 @@ const LIM=[
  ["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar","Plank cu atingerea umerilor","Alpinist"],
  ["Dips pe scaun","Flotări cu brațe apropiate","Plank cu atingerea umerilor"]
 ];
-const DEF={name:"",areas:[0,1,2,3],age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
+const DEF={name:"",areas:[0,1,2,3],pmode:0,age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
 let draft=null,editMode=false;
-function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));showTab("start")}
+function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));if(prof&&prof.pmode===undefined)draft.pmode=pray.free?0:1;showTab("start")}
 function renderStart(){
   if(!draft)draft=JSON.parse(JSON.stringify(DEF));
   if(!editMode&&!draft.started){
@@ -1174,7 +1181,7 @@ function renderStart(){
     const q=Q.find(x=>x.k===b.dataset.q),i=+b.dataset.i;
     if(q.t==="one")draft[q.k]=i;
     else{let a=draft[q.k]||[];if(i===q.none)a=[i];else{a=a.filter(x=>x!==q.none);a=a.includes(i)?a.filter(x=>x!==i):[...a,i];if(!a.length)a=q.none!==undefined?[q.none]:[i]}draft[q.k]=a}
-    if(q.k==="areas"){const y=window.scrollY;renderStart();window.scrollTo(0,y);return}
+    if(q.k==="areas"||q.k==="pmode"){const y=window.scrollY;renderStart();window.scrollTo(0,y);return}
     if(q.k==="pmin"){$("f-pbox").hidden=i!==3;if(i===3)$("f-pcustom").focus()}
     b.parentNode.querySelectorAll(".chip").forEach(c=>{const j=+c.dataset.i;c.setAttribute("aria-pressed",q.t==="one"?draft[q.k]===j:draft[q.k].includes(j))})});
   if($("cancelProf"))$("cancelProf").onclick=()=>{draft=null;showTab("eu")};
@@ -1199,6 +1206,7 @@ function saveProfile(){
   ["c","b","r"].forEach(k=>{if(rem[k])rem[k].on=A(k)});store.set("md_rem",rem);
   const PR=Object.keys(PLANS).filter(k=>!PLANS[k].custom),ownPlan=A("b")&&p.bplan>=PR.length;
   if(!ownPlan)bible.plan=PR[p.bplan];store.set("md_bible",bible);
+  pray.free=p.pmode!==1;
   pray.min=p.pmin===3?Math.min(180,Math.max(1,parseInt(p.pcustom,10)||15)):([5,10,20][p.pmin]||10);if(p.pmin===3)p.pcustom=pray.min;store.set("md_pray",pray);
   p.fastRestrict=p.age===0||!p.health.includes(4);
   const w=parseFloat(String(p.weight||"").replace(",","."));
@@ -1235,7 +1243,7 @@ function renderEu(){
   if(prof){
     const mn=milNext();
     const rows=[["Mișcare",corpMode==="run"?runTitle():corpMode==="mil"?`Program militar · săptămâna ${mn?mn[0]:8}`:`Rutina zilnică · ${LEVELS[level].name}`],
-      ["Citire",PLANS[bible.plan].n],["Rugăciune",pray.min+" minute pe zi"],["Post",prof.fastRestrict?"Doar variantele blânde":"Toate variantele, cu grijă"]].filter(([a])=>useA({Mișcare:"c",Citire:"b",Rugăciune:"r",Post:"p"}[a]));
+      ["Citire",PLANS[bible.plan].n],["Rugăciune",pray.free?"în ritmul tău, fără cronometru":pray.min+" minute pe zi"],["Post",prof.fastRestrict?"Doar variantele blânde":"Toate variantele, cu grijă"]].filter(([a])=>useA({Mișcare:"c",Citire:"b",Rugăciune:"r",Post:"p"}[a]));
     const L=Q.find(q=>q.k==="limits").o,lim=useA("c")?(prof.limits||[]).filter(i=>i!==4).map(i=>L[i].toLowerCase()):[];
     $("recCard").innerHTML=`<div class="tag c">Programul tău</div><dl class="reclist" style="margin:0">${rows.map(([a,b])=>`<dt>${a}</dt><dd>${b}</dd>`).join("")}</dl>
       ${lim.length?`<p class="muted">Ai menționat probleme la ${lim.length>1?lim.slice(0,-1).join(", ")+" și "+lim[lim.length-1]:lim[0]}. Am scos exercițiile care solicită aceste zone. Dacă durerea continuă, cere sfatul unui medic sau kinetoterapeut.</p>`:""}
