@@ -29,7 +29,7 @@ img{max-width:100%}[hidden]{display:none!important}
 /* Kardia: o singură temă, negru cu roșu (ca iconița) */
 :root{
   --bg:#0B0B0C; --surface:#161618; --ink:#F2F2F3; --muted:#9C9CA4; --line:#2A2A2F;
-  --accent:#E5303F; --accent-ink:#FFFFFF; --rest:#F2B84B; --pray:#9466F2; --soft:#2A1417; --warn:#2A2312; --hero1:#1E1E21; --hero2:#09090A;
+  --accent:#E5303F; --accent-ink:#FFFFFF; --rest:#F2B84B; --pray:#9466F2; --soft:#2A1417; --warn:#2A2312; --hero1:#1E1E21; --serve:#2FB585; --hero2:#09090A;
   --display:"Archivo","Arial Narrow",system-ui,sans-serif;
   --body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
   color-scheme:dark;
@@ -68,7 +68,7 @@ p{margin:0}
 .row{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .row>div{min-width:0}
 .tag{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
-.tag.c{color:var(--accent)} .tag.b{color:var(--rest)} .tag.r{color:var(--pray)} .tag.p{color:var(--muted)}
+.tag.c{color:var(--accent)} .tag.b{color:var(--rest)} .tag.r{color:var(--pray)} .tag.p{color:var(--muted)} .tag.s{color:var(--serve)}
 .ok{font-size:.8rem;font-weight:600;color:var(--accent);white-space:nowrap}
 .seg,.levels,.chips{display:grid;gap:8px}
 .seg{grid-template-columns:1fr 1fr}
@@ -257,7 +257,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 .medal b{font-size:.78rem;line-height:1.2}
 .medal span{font-size:.68rem;color:var(--muted);line-height:1.25}
 .disc{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:900;color:#FFFFFF;font-size:1rem;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),0 0 0 3px var(--surface),0 0 0 5px var(--line)}
-.disc.c{background:var(--accent)} .disc.b{background:#C98F00} .disc.r{background:var(--pray)} .disc.p{background:#55555C}
+.disc.c{background:var(--accent)} .disc.b{background:#C98F00} .disc.r{background:var(--pray)} .disc.p{background:#55555C} .disc.s{background:var(--serve)}
 .disc.x{background:linear-gradient(135deg,var(--accent),#C98F00,var(--pray))}
 .medal.locked .disc{background:var(--line);color:var(--muted);box-shadow:none}
 .medal.locked b{color:var(--muted)}
@@ -398,6 +398,12 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     </div>
     <div id="rugLearn" style="display:flex;flex-direction:column;gap:12px" hidden></div>
     <div id="rugFree" style="display:flex;flex-direction:column;gap:22px" hidden></div>
+  </section>
+
+  <!-- SLUJIRE -->
+  <section class="view" id="v-serve" hidden>
+    <div><h1>Slujire</h1><p class="date">Credința se vede și în fapte.</p></div>
+    <div id="serveBody" style="display:flex;flex-direction:column;gap:22px"></div>
   </section>
 
   <!-- EU -->
@@ -708,12 +714,13 @@ const TABS=[
  ["post","Post",'<path d="M12 3c4 5 6 8 6 11a6 6 0 0 1-12 0c0-3 2-6 6-11z"/>'],
  ["biblie","Biblie",'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11M12 7v5M10 9h4"/>'],
  ["rug","Rugăciune",'<path d="M12 3v7M9 6h6"/><path d="M5 21c0-5 3-8 7-8s7 3 7 8"/>'],
+ ["serve","Slujire",'<path d="M12 20s-6.5-4.2-6.5-9.2A3.6 3.6 0 0 1 12 8.6a3.6 3.6 0 0 1 6.5 2.2c0 5-6.5 9.2-6.5 9.2z"/><path d="M3 21h5l3-2M21 21h-5l-3-2"/>'],
  ["eu","Eu",'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>']
 ];
 let tab="azi";{const h=location.hash.slice(1);if(TABS.some(t=>t[0]===h))tab=h}
 
 /* ---------- areas the user chose to use (from the profile) ---------- */
-const AREAK=["c","b","r","p"],TAB_AREA={corp:"c",biblie:"b",rug:"r",post:"p"};
+const AREAK=["c","b","r","p","s"],TAB_AREA={corp:"c",biblie:"b",rug:"r",post:"p",serve:"s"};
 const areas=()=>{const a=typeof prof!=="undefined"&&prof&&Array.isArray(prof.areas)&&prof.areas.length?prof.areas:[0,1,2,3];return a.map(i=>AREAK[i])};
 const useA=k=>areas().includes(k);
 const dayKeys=()=>["c","b","r"].filter(useA);
@@ -731,7 +738,7 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>showTab(b.dataset.t))
 window.addEventListener("hashchange",()=>{const h=location.hash.slice(1);if(h!==tab&&TABS.some(t=>t[0]===h))showTab(h)});
 
 function render(){
-  ({azi:renderAzi,corp:renderCorp,post:renderPost,biblie:renderBiblie,rug:renderRug,eu:renderEu,start:renderStart})[tab]();
+  ({azi:renderAzi,corp:renderCorp,post:renderPost,biblie:renderBiblie,rug:renderRug,eu:renderEu,serve:renderServe,start:renderStart})[tab]();
 }
 
 function renderAzi(){
@@ -750,11 +757,12 @@ function renderAzi(){
    {t:"c",tag:"Mișcare",title:corpMode==="run"?runTitle():corpMode==="mil"&&mn?`Program militar · săpt. ${mn[0]} · ${MIL[mn[1]].k}`:`Rutina zilnică · ${LEVELS[level].name}`,done:has(TODAY,"c"),go:"corp"},
    {t:"b",tag:"Biblie",title:bi<0?"Plan terminat. Alege altul.":`Ziua ${bi+1}: ${bd[bi]}`,done:has(TODAY,"b"),go:"biblie"},
    {t:"r",tag:"Rugăciune",title:prayMode==="free"?(plist.length?`Rugăciune liberă · ${plist.length} ${plist.length===1?"motiv":"motive"} de rugăciune`:"Rugăciune liberă"):pray.free?`Rugăciune cu ${prayPassage()}`:`${pray.min} minute cu ${prayPassage()}`,done:has(TODAY,"r"),go:"rug"},
+   {t:"s",tag:"Slujire",title:serveIdea(),done:has(TODAY,"s"),go:"serve"},
    {t:"p",tag:"Post",title:fast.active?`În desfășurare: ${FASTS.find(f=>f.id===fast.active.id).n}`:"Opțional. Alege când ești pregătit.",done:false,go:"post"}
   ];
   $("today").style.cssText="display:flex;flex-direction:column;gap:10px";
   $("today").innerHTML=cards.filter(c=>useA(c.t)).map(c=>`<div class="card"><div class="row"><div><div class="tag ${c.t}">${c.tag}</div><div style="font-weight:600">${c.title}</div></div>
-    ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest);color:#141414"':c.t==="p"?'style="background:var(--muted)"':""}>Deschide</button>`}</div></div>`).join("");
+    ${c.done?'<span class="ok">✓ Făcut</span>':`<button class="btn small" data-go="${c.go}" ${c.t==="r"?'style="background:var(--pray)"':c.t==="b"?'style="background:var(--rest);color:#141414"':c.t==="p"?'style="background:var(--muted)"':c.t==="s"?'style="background:var(--serve)"':""}>Deschide</button>`}</div></div>`).join("");
   $("today").querySelectorAll("[data-go]").forEach(b=>b.onclick=()=>showTab(b.dataset.go));
   if(!prof){$("today").insertAdjacentHTML("afterbegin",`<div class="card"><div class="row"><div><div class="tag c">Profil</div><div style="font-weight:600">Răspunde la câteva întrebări ca să-ți potrivim programul.</div></div><button class="btn small" id="mkProf">Începe</button></div></div>`);
     $("mkProf").onclick=()=>openProfile(false)}
@@ -1162,7 +1170,7 @@ let prof=store.get("md_profile",null);
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const Q=[
  {k:"name",t:"text",l:"Cum te cheamă?",ph:"Prenumele tău"},
- {k:"areas",t:"many",l:"Pentru ce vrei să folosești Kardia?",sub:"Alege una sau mai multe. Poți schimba oricând din profil.",o:["Mișcare","Citirea Bibliei","Rugăciune","Post"]},
+ {k:"areas",t:"many",l:"Pentru ce vrei să folosești Kardia?",sub:"Alege una sau mai multe. Poți schimba oricând din profil.",o:["Mișcare","Citirea Bibliei","Rugăciune","Post","Slujirea altora"]},
  {k:"age",t:"one",l:"Vârsta",o:["sub 18","18–29","30–44","45–59","60+"]},
  {k:"hw",when:d=>d.areas.includes(0),t:"nums",l:"Înălțime și greutate (opțional)",f:[["height","Înălțime (cm)"],["weight","Greutate (kg)"]]},
  {k:"goal",when:d=>d.areas.includes(0),t:"one",l:"Ce vrei în primul rând?",o:["Să slăbesc","Condiție și energie","Forță","Să mă mențin"]},
@@ -1181,7 +1189,7 @@ const LIM=[
  ["Flotări","Flotări cu brațe apropiate","Burpees","Burpee militar","Plank cu atingerea umerilor","Alpinist"],
  ["Dips pe scaun","Flotări cu brațe apropiate","Plank cu atingerea umerilor"]
 ];
-const DEF={name:"",areas:[0,1,2,3],pmode:0,age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
+const DEF={name:"",areas:[0,1,2,3,4],pmode:0,age:1,goal:1,activity:0,pushups:1,limits:[4],minutes:1,health:[4],bplan:0,pmin:1,height:"",weight:""};
 let draft=null,editMode=false;
 function openProfile(edit){editMode=edit;draft=JSON.parse(JSON.stringify(Object.assign({},DEF,prof||{})));if(prof)draft.pmode=prayMode==="free"?2:pray.free?0:1;showTab("start")}
 function renderStart(){
@@ -1274,7 +1282,7 @@ function spark(pts){
 function renderEu(){
   const G=Q.find(q=>q.k==="goal").o;
   $("euName").textContent=prof&&prof.name?prof.name:"Profilul tău";
-  const AN={c:"mișcare",b:"citirea Bibliei",r:"rugăciune",p:"post"},al=areas().map(k=>AN[k]);
+  const AN={c:"mișcare",b:"citirea Bibliei",r:"rugăciune",p:"post",s:"slujirea altora"},al=areas().map(k=>AN[k]);
   $("euGoal").textContent=!prof?"Nu ai încă un profil.":useA("c")?"Obiectiv: "+G[prof.goal].toLowerCase():"Folosești Kardia pentru "+(al.length>1?al.slice(0,-1).join(", ")+" și "+al[al.length-1]:al[0]);
   $("progSec").hidden=!useA("c");$("avoidSec").hidden=!useA("c");
   $("editProf").textContent=prof?"Editează":"Creează";
@@ -1290,7 +1298,7 @@ function renderEu(){
   }else $("recCard").innerHTML=`<p>Completează profilul ca să primești un program potrivit pentru tine.</p><button class="btn small" id="mk2">Creează profilul</button>`;
   if($("mk2"))$("mk2").onclick=()=>openProfile(false);
   const cnt=k=>Object.values(log).filter(x=>x[k]).length;
-  $("stats").innerHTML=[["c",cnt("c"),"zile cu mișcare"],["c",Object.keys(mil.done).length,"sesiuni militare"],["c",Object.keys(run.done).length,"sesiuni de alergare"],["b",cnt("b"),"zile de citire"],["r",cnt("r"),"zile de rugăciune"],["p",fast.count,"posturi încheiate"],["",streak(),"zile active la rând"],["c",Object.values(steps).reduce((a,b)=>a+b,0).toLocaleString("ro-RO"),"pași notați"]]
+  $("stats").innerHTML=[["c",cnt("c"),"zile cu mișcare"],["c",Object.keys(mil.done).length,"sesiuni militare"],["c",Object.keys(run.done).length,"sesiuni de alergare"],["b",cnt("b"),"zile de citire"],["r",cnt("r"),"zile de rugăciune"],["p",fast.count,"posturi încheiate"],["s",cnt("s"),"zile de slujire"],["",streak(),"zile active la rând"],["c",Object.values(steps).reduce((a,b)=>a+b,0).toLocaleString("ro-RO"),"pași notați"]]
     .filter(([a])=>!a||useA(a)).map(([,v,l])=>[v,l])
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
@@ -1408,7 +1416,7 @@ function shStats(){
   const bP=PLANS[bible.plan],bD=Object.keys(bDone()).length;
   const sport=[[cntK("c"),"zile cu mișcare"],[Object.keys(mil.done).length+Object.keys(run.done).length,"antrenamente din programe"],[totSteps(),"pași notați"],
     [Object.keys(mil.done).length,"sesiuni militare"],[Object.keys(run.done).length,"ieșiri la alergare"],[bestStreak(),"cea mai lungă serie"]];
-  const spirit=[[cntK("b"),"zile de citire"],[cntK("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],
+  const spirit=[[cntK("b"),"zile de citire"],[cntK("r"),"zile de rugăciune"],...(useA("s")?[[cntK("s"),"zile de slujire"]]:[]),[fast.count,"posturi încheiate"],
     [nL("md_blessons")+nL("md_lessons"),"lecții parcurse"],[Object.keys(PLANS).filter(planDone).length,"planuri terminate"],[fullDays(),"zile complete"]];
   return{sport,spirit,plan:bP?`${bP.n} · ziua ${Math.min(bD,bP.days.length)} din ${bP.days.length}`:""};
 }
@@ -1462,11 +1470,11 @@ function drawCard(cv){
 function shBuildText(){
   const st=shStats(),parts=[`🔥 ${streak()} zile active la rând`];
   if(shMode!=="spirit")parts.push(`💪 ${cntK("c")} zile cu mișcare`+(totSteps()?`, ${totSteps().toLocaleString("ro-RO")} pași`:""));
-  if(shMode!=="sport"){parts.push(`📖 ${cntK("b")} zile în Cuvânt`);parts.push(`🙏 ${cntK("r")} zile de rugăciune`)}
+  if(shMode!=="sport"){parts.push(`📖 ${cntK("b")} zile în Cuvânt`);parts.push(`🙏 ${cntK("r")} zile de rugăciune`);if(useA("s"))parts.push(`🤝 ${cntK("s")} zile de slujire`)}
   return`Progresul meu în Kardia:\n${parts.join("\n")}\n\nHai să ne motivăm împreună! Aplicația e gratuită: https://kardiaapp.ro`;
 }
 async function renderShare(){
-  const hasSp=useA("b")||useA("r")||useA("p"),hasC=useA("c"),SM=[["all","Tot"],["spirit","Spiritual"],["sport","Sportiv"]].filter(([k])=>k==="all"?hasSp&&hasC:k==="spirit"?hasSp:hasC);
+  const hasSp=useA("b")||useA("r")||useA("p")||useA("s"),hasC=useA("c"),SM=[["all","Tot"],["spirit","Spiritual"],["sport","Sportiv"]].filter(([k])=>k==="all"?hasSp&&hasC:k==="spirit"?hasSp:hasC);
   if(!SM.some(([k])=>k===shMode))shMode=SM[0][0];
   $("shMode").hidden=SM.length<2;
   $("shMode").innerHTML=SM.map(([k,l])=>`<button type="button" class="chip" data-shm="${k}" aria-pressed="${shMode===k}">${l}</button>`).join("");
@@ -1491,6 +1499,35 @@ async function shShare(){
 }
 $("shGo").onclick=shShare;
 $("shCopy").onclick=async()=>{try{await navigator.clipboard.writeText(shText||shBuildText());$("shMsg").textContent="Text copiat."}catch(e){$("shMsg").textContent="Nu s-a putut copia textul."}};
+
+
+/* ---------- serving others ---------- */
+const SERVE_IDEAS=["Sună pe cineva care e singur și întreabă-l sincer ce mai face.","Scrie un mesaj de încurajare cuiva care trece printr-o perioadă grea.","Ajută la treburile casei fără să ți se ceară.","Oferă-te să faci cumpărături pentru un vecin în vârstă.","Roagă-te pentru cineva și spune-i că te-ai rugat pentru el.","Mulțumește cuiva care te-a ajutat, printr-un mesaj sincer.","Ascultă pe cineva până la capăt, fără să-l întrerupi și fără să dai sfaturi.","Invită pe cineva la o cafea sau la masă.","Ajută un coleg cu ceva la care se descurcă greu.","Donează haine sau lucruri de care nu mai ai nevoie.","Pregătește ceva bun de mâncare pentru cineva.","Vizitează pe cineva bolnav sau singur.","Fă o faptă bună în ascuns, fără să afle nimeni că ai fost tu.","Oferă-te să ajuți la biserică: curățenie, pregătiri sau primirea oamenilor.","Petrece timp cu cineva din familie, fără telefon.","Ajută un copil sau un elev la teme.","Spune un cuvânt bun cuiva care te servește: casierul, șoferul, vânzătorul.","Spune cuiva ce apreciezi la el.","Ajută pe cineva să-și care bagajele sau cumpărăturile.","Trimite un mesaj unui prieten pe care nu l-ai mai auzit de mult.","Împarte cu cineva care are nevoie un verset care te-a încurajat.","Oferă-te să ai grijă de copiii cuiva, ca să se poată odihni.","Plătește cafeaua sau masa cuiva.","Ajută un vârstnic cu telefonul sau calculatorul.","Fii răbdător azi cu cineva care îți pune răbdarea la încercare.","Întreabă pe cineva: „Cu ce te pot ajuta?” și chiar fă asta.","Scrie câteva rânduri de mulțumire unui profesor, pastor sau mentor.","Strânge gunoiul dintr-un loc public, chiar dacă nu l-ai lăsat tu.","Gătește sau cumpără ceva pentru o familie care trece prin greutăți.","Ia apărarea cuiva care e vorbit de rău."];
+const SERVE_VERSES=[["Marcu 10:45","Fiul omului n-a venit să I se slujească, ci El să slujească."],["Galateni 5:13","Slujiți-vă unii altora în dragoste."],["Matei 25:40","Ori de câte ori ați făcut aceste lucruri unuia din acești foarte neînsemnați frați ai Mei, Mie mi le-ați făcut."],["1 Petru 4:10","Ca niște buni ispravnici ai harului atât de felurit al lui Dumnezeu, fiecare din voi să slujească altora după darul pe care l-a primit."],["Filipeni 2:4","Fiecare din voi să se uite nu la foloasele lui, ci și la foloasele altora."]];
+let serveLog=store.get("md_serve",[]),serveShift=0;
+function serveIdea(){const n=SERVE_IDEAS.length;return SERVE_IDEAS[(((dayNum+serveShift)%n)+n)%n]}
+function renderServe(){
+  const done=has(TODAY,"s"),v=SERVE_VERSES[((dayNum%SERVE_VERSES.length)+SERVE_VERSES.length)%SERVE_VERSES.length];
+  const recent=serveLog.slice().reverse().slice(0,30);
+  $("serveBody").innerHTML=`
+  <div class="card"><div class="tag s">Ideea de azi</div>
+    <div class="reading">${serveIdea()}</div>
+    <div class="opts"><button class="ghost" id="svNext">Altă idee</button></div>
+    <p class="muted">Nu trebuie să fie ceva mare. Un gest mic, făcut din dragoste, contează.</p>
+  </div>
+  <div class="card">
+    ${done?'<div class="donebox">Ai slujit pe cineva azi. ✓</div>':`
+    <label class="flabel" for="svNote">Ce ai făcut? <span class="muted" style="font-weight:400">(opțional, rămâne doar la tine)</span></label>
+    <textarea class="inp" id="svNote" rows="2" maxlength="200" placeholder="ex.: Am sunat-o pe bunica"></textarea>
+    <button class="btn" id="svDone" style="background:var(--serve)">Am slujit pe cineva azi</button>`}
+  </div>
+  <div class="card"><div class="tag s">${v[0]}</div><p style="font-style:italic">„${v[1]}”</p></div>
+  ${recent.length?`<section><h2>Jurnalul slujirii · ${cntK("s")} ${cntK("s")===1?"zi":"zile"}</h2><div class="card"><ul class="plist">${recent.map(x=>`<li><span>${x.t?esc(x.t):'<span class="muted">Fără notiță</span>'}<small>${dm(x.d)}</small></span></li>`).join("")}</ul></div></section>`:""}`;
+  $("svNext").onclick=()=>{serveShift++;renderServe()};
+  if($("svDone"))$("svDone").onclick=()=>{const p0=points(),t=$("svNote").value.trim().slice(0,200);
+    serveLog.push({d:TODAY,t});store.set("md_serve",serveLog);mark("s");renderServe();
+    celebrate("Încă o zi în care ai slujit","„Mie mi le-ați făcut.” (Matei 25:40)",p0)};
+}
 
 /* ---------- suggestions ---------- */
 let sgType="Idee";
@@ -1517,7 +1554,7 @@ $("sgSend").onclick=async()=>{
 /* ---------- points, levels, medals, celebration ---------- */
 const buzz=ms=>{try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}};
 const cntK=k=>Object.values(log).filter(x=>x[k]).length;
-function points(){let p=0;for(const d in log){const x=log[d];p+=(x.c?10:0)+(x.b?10:0)+(x.r?10:0)+(dayKeys().length>1&&isFull(x)?10:0)}
+function points(){let p=0;for(const d in log){const x=log[d];p+=(x.c?10:0)+(x.b?10:0)+(x.r?10:0)+(x.s?10:0)+(dayKeys().length>1&&isFull(x)?10:0)}
   return p+Object.keys(mil.done).length*5+fast.count*20}
 const LVT=[0,50,150,300,500,800,1200,1700,2300],LVN=["Început","Pas cu pas","Statornic","Perseverent","Luptător","Atlet","Veteran","Neclintit","Biruitor"];
 function lvl(p){let i=0;while(i<LVT.length-1&&p>=LVT[i+1])i++;return{i,name:LVN[i],cur:LVT[i],next:LVT[i+1]||null}}
@@ -1579,6 +1616,10 @@ const BADGES=[
  B("r100","Rugăciune neîncetată","100","r","Rugăciune","100 de zile de rugăciune",()=>cntK("r"),100),
  B("learn","Ucenic","8","r","Rugăciune","Toate lecțiile de rugăciune",()=>nL("md_lessons"),8),
 
+ B("sv1","Primul gest de slujire","1","s","Slujire","Prima zi în care ai slujit pe cineva",()=>cntK("s"),1),
+ B("sv7","O săptămână de slujire","7","s","Slujire","7 zile de slujire",()=>cntK("s"),7),
+ B("sv30","Inimă de slujitor","30","s","Slujire","30 de zile de slujire",()=>cntK("s"),30),
+ B("sv100","Mâini întinse","100","s","Slujire","100 de zile de slujire",()=>cntK("s"),100),
  B("fast","Primul post","P","p","Post și progres","Un post încheiat",()=>fast.count,1),
  B("fast5","Statornic în post","5","p","Post și progres","5 posturi încheiate",()=>fast.count,5),
  B("fast20","Inimă disciplinată","20","p","Post și progres","20 de posturi încheiate",()=>fast.count,20),
@@ -1591,7 +1632,7 @@ const fmtN=v=>v>=10000?Math.round(v/1000).toLocaleString("ro-RO")+"k":v.toLocale
 const medalHTML=(b,on)=>{let pr="";if(!on){const [c,t]=b.pr();if(t>1)pr=`<div class="mp"><i style="width:${(c/t*100).toFixed(0)}%"></i></div><small>${fmtN(c)} / ${fmtN(t)}</small>`}
   return`<div class="medal ${on?"":"locked"}"><div class="disc ${b.t}">${b.g}</div><b>${b.n}</b><span>${b.d}</span>${pr}</div>`};
 function renderMedals(){checkBadges();const got=store.get("md_badges",{});
-  const CA={"Mișcare":()=>useA("c"),"Cuvântul":()=>useA("b"),"Rugăciune":()=>useA("r"),"Post și progres":()=>useA("p")||useA("c")},VB=BADGES.filter(b=>!CA[b.cat]||CA[b.cat]());
+  const CA={"Mișcare":()=>useA("c"),"Cuvântul":()=>useA("b"),"Rugăciune":()=>useA("r"),"Slujire":()=>useA("s"),"Post și progres":()=>useA("p")||useA("c")},VB=BADGES.filter(b=>!CA[b.cat]||CA[b.cat]());
   $("medalsT").textContent=`Medalii · ${VB.filter(b=>got[b.id]).length} din ${VB.length}`;
   const cats=[...new Set(VB.map(b=>b.cat))];
   $("medals").innerHTML=cats.map(c=>{const list=VB.filter(b=>b.cat===c),n=list.filter(b=>got[b.id]).length;
