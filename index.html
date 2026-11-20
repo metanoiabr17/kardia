@@ -659,8 +659,11 @@ const WORSHIP=["Psalmul 8","Psalmul 19","Psalmul 23","Psalmul 27","Psalmul 33","
 const FOCUS=["biserica ta și cei care o slujesc","familia ta","prietenii și cei care încă nu-L cunosc pe Isus","colegii, elevii și locul tău de muncă","orașul, țara și cei care conduc","cei bolnavi, singuri sau în suferință","lucrarea lui Dumnezeu în lume și ziua de mâine"];
 let pray=store.get("md_pray",{min:10,src:"ps"});if(pray.ex===undefined)pray.ex=true;if(pray.free===undefined)pray.free=true;
 const psalmToday=WORSHIP[((dayNum%WORSHIP.length)+WORSHIP.length)%WORSHIP.length];
+function readTodayIdx(){const D=bDone();let r=-1;for(const k in D)if(D[k]===TODAY&&+k>r)r=+k;return r}
+/* pasajul din plan pentru rugăciune: cel citit azi, dacă există; altfel următorul de citit */
+function planPassage(){const days=PLANS[bible.plan].days,t=readTodayIdx(),i=t>=0?t:bNext();return days[i<0?days.length-1:i].split(";")[0]}
 function prayPassage(){
-  if(pray.src==="plan"){const i=bNext();const days=PLANS[bible.plan].days;return days[i<0?days.length-1:i].split(";")[0]}
+  if(pray.src==="plan")return planPassage();
   return psalmToday;
 }
 function prayerSteps(){
@@ -824,8 +827,8 @@ function renderBiblie(){
   else{
     const readToday=Object.values(D).includes(TODAY);
     $("readCard").innerHTML=`<div class="tag b">${esc(P.n)} · ziua ${i+1} din ${P.days.length}</div><div class="bar2"><i style="width:${(Object.keys(D).length/P.days.length*100).toFixed(1)}%"></i></div><div class="reading">${P.days[i]}</div>${readLinks(P.days[i])}
-      ${readToday?'<p class="muted">Ai citit deja azi. Poți merge mai departe, dacă vrei.</p>':""}
-      <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest);color:#141414">Am citit</button><button class="ghost" id="readPray">Roagă-te cu acest text</button></div>`;
+      ${readToday?`<p class="muted">Azi ai citit ${P.days[readTodayIdx()]}. Poți merge mai departe, dacă vrei.</p>`:""}
+      <div class="opts"><button class="btn small" id="readOk" style="background:var(--rest);color:#141414">Am citit</button><button class="ghost" id="readPray">${readToday?"Roagă-te cu citirea de azi":"Roagă-te cu acest text"}</button></div>`;
     $("readOk").onclick=()=>{const p0=points();D[i]=TODAY;store.set("md_bible",bible);mark("b");renderBiblie();celebrate("Citire bifată",`Ziua ${i+1}: ${P.days[i]}`,p0)};
     $("readPray").onclick=()=>{pray.src="plan";store.set("md_pray",pray);showTab("rug")};
   }
@@ -886,7 +889,7 @@ function renderRug(){
   $("rSet").onclick=()=>{const v=parseInt($("rMin").value,10);if(!(v>0)){$("rMin").focus();return}
     pray.min=Math.min(180,v);store.set("md_pray",pray);$("durCustom").hidden=true;renderRug()};
   $("rMin").onkeydown=e=>{if(e.key==="Enter")$("rSet").click()};
-  $("srcPick").innerHTML=[["ps","Psalmul zilei"],["plan","Citirea din plan"]].map(([k,l])=>`<button class="lvl" data-s="${k}" aria-pressed="${pray.src===k}"><b style="font-size:.95rem">${l}</b><span>${k==="ps"?psalmToday:PLANS[bible.plan].n}</span></button>`).join("");
+  $("srcPick").innerHTML=[["ps","Psalmul zilei"],["plan","Citirea din plan"]].map(([k,l])=>`<button class="lvl" data-s="${k}" aria-pressed="${pray.src===k}"><b style="font-size:.95rem">${l}</b><span>${k==="ps"?psalmToday:planPassage()}</span></button>`).join("");
   $("srcPick").querySelectorAll("button").forEach(b=>b.onclick=()=>{pray.src=b.dataset.s;store.set("md_pray",pray);renderRug()});
   const st=prayerSteps();
   $("prayCard").innerHTML=`<div class="tag r">Pașii de azi · ${prayPassage()}</div>
