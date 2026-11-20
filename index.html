@@ -238,8 +238,10 @@ textarea.inp{resize:vertical;min-height:110px;line-height:1.45}
 .wlogo{width:120px;height:120px;border-radius:30px;background:linear-gradient(135deg,#1C1C1F,#050506);display:grid;place-items:center;margin-bottom:6px;box-shadow:0 12px 30px rgba(0,0,0,.3)}
 .wlogo svg{width:92px;height:92px}
 .welcome h1.brand{font-size:3rem}
-.wlist{list-style:none;margin:10px 0;padding:0;display:flex;flex-direction:column;gap:10px;text-align:left;width:100%;max-width:340px}
-.wlist li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;font-size:.95rem}
+.wlist{list-style:none;margin:6px 0 0;padding:0;display:flex;flex-direction:column;gap:10px;text-align:left;width:100%;max-width:340px}
+.wlist li{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:10px 12px;font-size:.93rem;display:flex;align-items:center;gap:12px;line-height:1.35}
+.wic{flex:none;width:38px;height:38px;border-radius:11px;display:grid;place-items:center;color:var(--c);background:color-mix(in srgb,var(--c) 16%,transparent)}
+.wic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .welcome .btn{max-width:340px}
 h1.brand{font-size:2.6rem;letter-spacing:-.03em}
 .tagline{font-family:var(--display);font-weight:700;font-size:.92rem;color:var(--accent);margin-top:6px}
@@ -1241,7 +1243,8 @@ function renderStart(){
 <polyline points="96,292 196,292 222,250 246,316 268,292 290,292" fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M332 196 V 330 M294 238 H 370" stroke="#fff" stroke-width="22" stroke-linecap="round"/></svg></div>
       <h1 class="brand">Kardia</h1><div class="tagline">Pentru trup și suflet</div>
-      <ul class="wlist"><li><b>Mișcare</b> zilnică, doar cu greutatea corpului</li><li><b>Cuvântul</b> lui Dumnezeu, cu planuri de citire</li><li><b>Rugăciune</b> ghidată și lecții pentru începători</li></ul>
+      <ul class="wlist">${[["corp","var(--accent)","Mișcare","zilnică, doar cu greutatea corpului"],["biblie","var(--rest)","Biblia","cu planuri de citire și lecții pentru începători"],["rug","var(--pray)","Rugăciune","ghidată sau liberă, în ritmul tău"],["post","#C9C9CE","Post","cu variante potrivite sănătății tale"],["serve","var(--serve)","Slujire","o idee pe zi ca să faci bine cuiva"],["grup","var(--serve)","Grup mic","citiți și vă rugați împreună cu prietenii"]].map(([k,c,t,d])=>`<li><span class="wic" style="--c:${c}"><svg viewBox="0 0 24 24">${TABS.find(x=>x[0]===k)[2]}</svg></span><span><b>${t}</b> ${d}</span></li>`).join("")}</ul>
+      <p class="muted" style="margin-top:-4px">Alegi tu ce folosești, una sau mai multe.</p>
       <p class="wnote">Kardia nu este o listă de bifat pentru devoțional, ci un instrument care te ajută să-ți urmărești constanța și perseverența.</p>
       <button class="btn" type="button" id="wStart">Să începem</button>
       <p class="muted">Durează un minut. Răspunsurile rămân doar pe telefonul tău.</p><p class="copy">© 2026 Daniel Mehedinți</p></div>`;
