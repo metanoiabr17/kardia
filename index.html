@@ -171,6 +171,7 @@ ul.q{margin:0;padding-left:18px;font-size:.9rem;display:flex;flex-direction:colu
 .reclist{display:grid;grid-template-columns:auto 1fr;gap:6px 14px;font-size:.92rem}
 .reclist dt{color:var(--muted)} .reclist dd{margin:0;font-weight:600}
 body.onb .tabs{display:none}
+.shcv{width:100%;height:auto;border-radius:16px;border:1px solid var(--line);display:block;max-width:420px;align-self:center}
 .pushon{display:flex;flex-direction:column;gap:8px}
 .calalt{background:transparent;border-color:var(--line)}
 .calalt summary{font-weight:500;font-size:.9rem;color:var(--muted)}
@@ -394,6 +395,15 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <button class="btn" id="instOpen" hidden>Instalează aplicația pe telefon</button>
     <section><h2>Mementouri</h2><div class="card" id="remCard"></div></section>
     <section><h2>Ce ai realizat</h2><div class="stats" id="stats"></div></section>
+    <section id="shSec"><h2>Împărtășește progresul</h2>
+      <div class="card">
+        <p class="muted">Trimite prietenilor un card cu progresul tău, ca să vă motivați unii pe alții.</p>
+        <div class="chipset" id="shMode"></div>
+        <canvas id="shCanvas" class="shcv" width="1080" height="1350" aria-label="Cardul cu progresul tău"></canvas>
+        <div class="opts" style="align-items:center"><button class="btn small" id="shGo">Trimite prietenilor</button><button class="ghost" id="shCopy">Copiază textul</button></div>
+        <span class="muted" id="shMsg" role="status"></span>
+      </div>
+    </section>
     <section><h2 id="medalsT">Medalii</h2><div class="medals" id="medals"></div></section>
     <section style="display:flex;flex-direction:column;gap:10px"><h2 style="margin:0">Progresul fizic</h2>
       <div class="card">
@@ -483,6 +493,7 @@ h1.brand{font-size:2.6rem;letter-spacing:-.03em}
     <div id="celeL"></div>
     <div id="celeB" class="medals" style="width:100%"></div>
     <button class="btn" id="celeOk">Continuă</button>
+    <button class="ghost" id="celeShare" style="width:100%">Împărtășește cu prietenii</button>
   </div>
 </div>
 <canvas id="confetti" hidden></canvas>
@@ -1215,6 +1226,7 @@ function renderEu(){
     .map(([v,l])=>`<div class="stat"><b>${v}</b><span>${l}</span></div>`).join("");
   renderMedals();
   renderRem();
+  renderShare();
   renderSuggest();
   let ch="";
   METRICS.forEach(([k,n,u])=>{const pts=prog.filter(e=>e[k]!=null).map(e=>({d:e.d,v:e[k]}));if(!pts.length)return;
@@ -1318,6 +1330,95 @@ async function pushTest(){
     await pushPost("/test",sub.toJSON());pMsg("Ți-am trimis o notificare de test. Ar trebui să apară în câteva secunde.")}
   catch(e){pMsg("Nu s-a putut trimite testul. Încearcă din nou.")}
 }
+
+
+/* ---------- share progress (image card + text) ---------- */
+let shMode=store.get("md_shmode","all"),shFile=null,shText="";
+const HEARTP="M256 420 C 118 330 62 240 100 165 C 135 98 222 98 256 168 C 290 98 377 98 412 165 C 450 240 394 330 256 420 Z";
+function shStats(){
+  const bP=PLANS[bible.plan],bD=Object.keys(bDone()).length;
+  const sport=[[cntK("c"),"zile cu mișcare"],[Object.keys(mil.done).length+Object.keys(run.done).length,"antrenamente din programe"],[totSteps(),"pași notați"],
+    [Object.keys(mil.done).length,"sesiuni militare"],[Object.keys(run.done).length,"ieșiri la alergare"],[bestStreak(),"cea mai lungă serie"]];
+  const spirit=[[cntK("b"),"zile de citire"],[cntK("r"),"zile de rugăciune"],[fast.count,"posturi încheiate"],
+    [nL("md_blessons")+nL("md_lessons"),"lecții parcurse"],[Object.keys(PLANS).filter(planDone).length,"planuri terminate"],[fullDays(),"zile complete"]];
+  return{sport,spirit,plan:bP?`${bP.n} · ziua ${Math.min(bD,bP.days.length)} din ${bP.days.length}`:""};
+}
+function rr(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function drawLogo(ctx,x,y,sz){
+  ctx.save();rr(ctx,x,y,sz,sz,sz*.24);const g=ctx.createLinearGradient(x,y,x+sz,y+sz);g.addColorStop(0,"#26262A");g.addColorStop(1,"#0A0A0B");ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle="#2E2E33";ctx.lineWidth=2;ctx.stroke();
+  ctx.translate(x,y);ctx.scale(sz/512,sz/512);ctx.lineJoin="round";ctx.lineCap="round";
+  ctx.fillStyle="#E5303F";ctx.fill(new Path2D(HEARTP));
+  ctx.strokeStyle="#fff";ctx.lineWidth=20;ctx.stroke(new Path2D("M96 292 L196 292 L222 250 L246 316 L268 292 L290 292"));
+  ctx.lineWidth=22;ctx.stroke(new Path2D("M332 196 V 330 M294 238 H 370"));ctx.restore();
+}
+const fmtBig=v=>v>=100000?Math.round(v/1000).toLocaleString("ro-RO")+"k":v.toLocaleString("ro-RO");
+function drawCard(cv){
+  const W=1080,H=1350,ctx=cv.getContext("2d");cv.width=W;cv.height=H;
+  const D='"Archivo","Arial Narrow",Arial,sans-serif',B='"Inter",Arial,sans-serif',st=shStats(),P=points(),L=lvl(P);
+  const bg=ctx.createLinearGradient(0,0,W,H);bg.addColorStop(0,"#1A1A1D");bg.addColorStop(1,"#050506");ctx.fillStyle=bg;ctx.fillRect(0,0,W,H);
+  const gl=ctx.createRadialGradient(W*.85,120,10,W*.85,120,620);gl.addColorStop(0,"rgba(229,48,63,.35)");gl.addColorStop(1,"rgba(229,48,63,0)");ctx.fillStyle=gl;ctx.fillRect(0,0,W,H);
+  drawLogo(ctx,72,72,120);
+  ctx.fillStyle="#fff";ctx.font=`900 64px ${D}`;ctx.textBaseline="alphabetic";ctx.fillText("Kardia",216,128);
+  ctx.fillStyle="#E5303F";ctx.font=`700 30px ${D}`;ctx.fillText("Pentru trup și suflet",218,172);
+  const who=prof&&prof.name?`Progresul lui ${prof.name}`:"Progresul meu";
+  ctx.fillStyle="#fff";ctx.font=`800 58px ${D}`;ctx.fillText(who.length>26?"Progresul meu":who,72,300);
+  ctx.fillStyle="#9C9CA4";ctx.font=`500 30px ${B}`;ctx.fillText(today.toLocaleDateString("ro-RO",{day:"numeric",month:"long",year:"numeric"})+` · Nivel ${L.i+1} · ${L.name}`,72,348);
+  let y=400;
+  // streak band
+  rr(ctx,72,y,W-144,190,32);ctx.fillStyle="#161618";ctx.fill();ctx.strokeStyle="#2A2A2F";ctx.lineWidth=2;ctx.stroke();
+  ctx.fillStyle="#E5303F";ctx.font=`900 132px ${D}`;const sv=String(streak());ctx.fillText(sv,112,y+148);
+  const sw=ctx.measureText(sv).width;ctx.fillStyle="#fff";ctx.font=`800 40px ${D}`;ctx.fillText("zile active la rând",132+sw,y+92);
+  ctx.fillStyle="#9C9CA4";ctx.font=`500 28px ${B}`;ctx.fillText(`${BADGES.filter(b=>store.get("md_badges",{})[b.id]).length} medalii · ${P} puncte`,132+sw,y+140);
+  y+=240;
+  const sec=[];if(shMode!=="spirit")sec.push(["TRUP","#E5303F",st.sport]);if(shMode!=="sport")sec.push(["SUFLET","#B994FF",st.spirit]);
+  const per=sec.length===2?3:6,th=sec.length===2?170:180,gap=20,tw=(W-144-2*gap)/3;
+  sec.forEach(([t,col,items])=>{
+    ctx.fillStyle=col;ctx.font=`800 28px ${D}`;ctx.fillText(t.split("").join(String.fromCharCode(8202)),72,y+28);
+    if(t==="SUFLET"&&st.plan){ctx.fillStyle="#9C9CA4";ctx.font=`500 24px ${B}`;const pt=st.plan.length>48?st.plan.slice(0,47)+"…":st.plan;ctx.textAlign="right";ctx.fillText(pt,W-72,y+28);ctx.textAlign="left"}
+    y+=52;
+    items.slice(0,per).forEach(([v,l],i)=>{const cx=72+(i%3)*(tw+gap),cy=y+Math.floor(i/3)*(th+gap);
+      rr(ctx,cx,cy,tw,th,26);ctx.fillStyle="#161618";ctx.fill();ctx.strokeStyle="#2A2A2F";ctx.lineWidth=2;ctx.stroke();
+      ctx.fillStyle="#fff";ctx.font=`900 ${sec.length===2?68:72}px ${D}`;ctx.fillText(fmtBig(v),cx+26,cy+(th*.52));
+      ctx.fillStyle="#B4B4BC";ctx.font=`500 25px ${B}`;
+      const words=l.split(" ");let line="",ly=cy+th*.52+42;words.forEach(w=>{const tt=line?line+" "+w:w;if(ctx.measureText(tt).width>tw-44&&line){ctx.fillText(line,cx+26,ly);line=w;ly+=30}else line=tt});ctx.fillText(line,cx+26,ly)});
+    y+=Math.ceil(Math.min(per,items.length)/3)*(th+gap)+30;
+  });
+  // footer
+  const fy=H-150;ctx.fillStyle="#E5303F";rr(ctx,72,fy,330,76,38);ctx.fill();
+  ctx.fillStyle="#fff";ctx.font=`900 36px ${D}`;ctx.textAlign="center";ctx.fillText("kardiaapp.ro",72+165,fy+50);ctx.textAlign="left";
+  ctx.fillStyle="#D8D8DE";ctx.font=`600 28px ${B}`;ctx.fillText("Hai și tu! Gratuit, fără reclame.",430,fy+48);
+  ctx.fillStyle="#5E5E66";ctx.font=`500 20px ${B}`;ctx.fillText("© 2026 Daniel Mehedinți",72,H-36);
+}
+function shBuildText(){
+  const st=shStats(),parts=[`🔥 ${streak()} zile active la rând`];
+  if(shMode!=="spirit")parts.push(`💪 ${cntK("c")} zile cu mișcare`+(totSteps()?`, ${totSteps().toLocaleString("ro-RO")} pași`:""));
+  if(shMode!=="sport"){parts.push(`📖 ${cntK("b")} zile în Cuvânt`);parts.push(`🙏 ${cntK("r")} zile de rugăciune`)}
+  return`Progresul meu în Kardia:\n${parts.join("\n")}\n\nHai să ne motivăm împreună! Aplicația e gratuită: https://kardiaapp.ro`;
+}
+async function renderShare(){
+  $("shMode").innerHTML=[["all","Tot"],["spirit","Spiritual"],["sport","Sportiv"]].map(([k,l])=>`<button type="button" class="chip" data-shm="${k}" aria-pressed="${shMode===k}">${l}</button>`).join("");
+  $("shMode").querySelectorAll("[data-shm]").forEach(b=>b.onclick=()=>{shMode=b.dataset.shm;store.set("md_shmode",shMode);renderShare()});
+  try{await Promise.all(["900 64px Archivo","800 40px Archivo","500 25px Inter"].map(f=>document.fonts.load(f)))}catch(e){}
+  const cv=$("shCanvas");drawCard(cv);shText=shBuildText();shFile=null;
+  cv.toBlob(b=>{if(b)shFile=new File([b],"kardia-progres.png",{type:"image/png"})},"image/png");
+  const canFiles=!!(navigator.canShare&&navigator.share);
+  $("shGo").textContent=canFiles?"Trimite prietenilor":"Copiază mesajul";
+}
+async function shShare(){
+  const msg=$("shMsg");msg.textContent="";
+  if(navigator.share){
+    try{
+      if(shFile&&navigator.canShare&&navigator.canShare({files:[shFile]}))await navigator.share({files:[shFile],text:shText,title:"Progresul meu în Kardia"});
+      else await navigator.share({text:shText,title:"Progresul meu în Kardia",url:"https://kardiaapp.ro"});
+      return;
+    }catch(e){if(e&&e.name==="AbortError")return}
+  }
+  try{await navigator.clipboard.writeText(shText);msg.textContent="Mesajul a fost copiat. Lipește-l într-o conversație."}
+  catch(e){msg.textContent="Ține apăsat pe imagine ca s-o salvezi, apoi trimite-o prietenilor."}
+}
+$("shGo").onclick=shShare;
+$("shCopy").onclick=async()=>{try{await navigator.clipboard.writeText(shText||shBuildText());$("shMsg").textContent="Text copiat."}catch(e){$("shMsg").textContent="Nu s-a putut copia textul."}};
 
 /* ---------- suggestions ---------- */
 let sgType="Idee";
@@ -1447,6 +1548,7 @@ function celebrate(title,sub,p0){
   beep(784,150);setTimeout(()=>beep(988,150),150);setTimeout(()=>beep(1318,300),300);
 }
 $("celeOk").onclick=()=>{$("cele").hidden=true;render()};
+$("celeShare").onclick=()=>{$("cele").hidden=true;showTab("eu");setTimeout(()=>{const e=$("shSec");if(e)e.scrollIntoView({behavior:"smooth",block:"start"})},150)};
 function confetti(){
   try{if(matchMedia("(prefers-reduced-motion: reduce)").matches)return}catch(e){}
   const cv=$("confetti"),ctx=cv.getContext("2d");if(!ctx)return;cv.hidden=false;
